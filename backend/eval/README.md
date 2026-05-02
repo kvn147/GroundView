@@ -1,0 +1,1 @@
+Currently we will evaluate the agents with a set of claims, and score them based on correctness, thoroughness, etc. 

@@ -21,6 +21,8 @@ Misinformation is rampant across the internet and unbiased fact-checking is diff
 - **Judge model** synthesizes an honest 2-3 sentence response — never a binary verdict, always hedged, always cited.
 - Results render as a sidebar alongside the video with timeline markers.
 
+![alt text](infrastructure.png)
+
 ### What makes it different
 - Not a verdict machine — surfaces context and lets users decide
 - Flags out-of-context clips, not just false claims
