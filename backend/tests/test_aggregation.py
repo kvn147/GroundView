@@ -286,3 +286,23 @@ class TestAggregateTopLevel:
 
     def test_aggregated_sources_list_type(self):
         assert isinstance(aggregate([_annotation(1.0)], []).aggregatedSources, list)
+
+
+# ---------------------------------------------------------------------------
+# L4b invariant — rules-only, no LLM
+# ---------------------------------------------------------------------------
+
+
+def test_aggregation_does_not_import_an_llm_client() -> None:
+    """AGENTIC_WORKFLOW.md mandates L4a/L4b are auditable Python rules
+    with no LLM. The aggregation module's import graph must reflect that —
+    every word the user reads ties back to a structured EvidenceItem
+    rendered deterministically, not to an LLM completion."""
+    import importlib
+
+    aggregation = importlib.import_module("backend.core.aggregation")
+    forbidden = {"openai", "AsyncOpenAI", "httpx", "OpenRouterLlmClient"}
+    found = forbidden & set(dir(aggregation))
+    assert not found, (
+        f"Aggregation must not import any LLM client; found: {found}"
+    )
