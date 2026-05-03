@@ -61,6 +61,11 @@ from backend.core.transcript import (
     get_transcript,
     normalize_transcript_segments,
 )
+from backend.demo_fixtures import (
+    get_demo_clip_response,
+    get_demo_response,
+    get_demo_transcript,
+)
 
 api_router = APIRouter()
 logger = logging.getLogger("uvicorn.error")
@@ -248,11 +253,83 @@ async def _resolve_transcript_chunks(
     if transcript is not None:
         _transcript_debug("resolving from inline request body url=%s", url)
         return _build_transcript_record(url, transcript)
+    demo_transcript = get_demo_transcript(url)
+    if demo_transcript is not None:
+        _transcript_debug("resolving from hard-coded demo transcript url=%s", url)
+        return _build_transcript_record(url, demo_transcript)
     if transcript is None:
         _transcript_debug("no transcript supplied for url=%s", url)
         chunks = await get_transcript(url)
         return {"url": url, "segments": chunks, "chunks": chunks}
     return {"url": url, "segments": [], "chunks": []}
+
+
+async def _demo_video_events(
+    url: str,
+    run_id: str,
+    seq: int,
+) -> AsyncIterator[dict]:
+    response = get_demo_response(url)
+    transcript = get_demo_transcript(url) or []
+    if response is None:
+        return
+
+    _transcript_debug(
+        "using hard-coded demo response url=%s claims=%s",
+        url,
+        len(response.claims),
+    )
+    event, seq = await _emit(
+        "transcript_ready",
+        run_id,
+        seq,
+        chunkCount=len(chunk_transcript_segments(normalize_transcript_segments(transcript))),
+        processedChunkLimit=1,
+    )
+    yield event
+
+    for claim_index, claim in enumerate(response.claims):
+        event, seq = await _emit(
+            "claim_extracted",
+            run_id,
+            seq,
+            claimIndex=claim_index,
+            claim={
+                "claim_text": claim.text,
+                "raw_quote": claim.text,
+                "start_time": claim.startTime,
+                "end_time": claim.endTime,
+                "topics": ["demo"],
+            },
+        )
+        yield event
+
+        event, seq = await _emit(
+            "claim_final",
+            run_id,
+            seq,
+            claimIndex=claim_index,
+            claim=claim.model_dump(),
+        )
+        yield event
+
+    event, seq = await _emit(
+        "summary_updated",
+        run_id,
+        seq,
+        summary=response.summary,
+        trustworthinessScore=response.trustworthinessScore,
+        maxScore=response.maxScore,
+        trustworthinessLabel=response.trustworthinessLabel,
+        politicalLean=response.politicalLean.model_dump(),
+        aggregatedSources=[
+            source.model_dump() for source in response.aggregatedSources
+        ],
+    )
+    yield event
+
+    event, _seq = await _emit("done", run_id, seq, result=response.model_dump())
+    yield event
 
 
 def _canonicalize_text(text: str) -> str:
@@ -571,6 +648,12 @@ async def analyze_video_events(
         url,
     )
 
+    demo_response = get_demo_response(url)
+    if demo_response is not None:
+        async for event in _demo_video_events(url, run_id, seq):
+            yield event
+        return
+
     try:
         transcript_record = await _resolve_transcript_chunks(
             url,
@@ -823,6 +906,36 @@ async def analyze_clip_events(
 
     event, seq = await _emit("run_started", run_id, seq, mode="clip", url=req.url)
     yield event
+
+    demo_clip = get_demo_clip_response(req.url, req.startTime, req.endTime)
+    if demo_clip is not None:
+        event, seq = await _emit(
+            "transcript_ready",
+            run_id,
+            seq,
+            chunkCount=len(get_demo_transcript(req.url) or []),
+            processedChunkLimit=1,
+        )
+        yield event
+
+        event, seq = await _emit(
+            "claim_extracted",
+            run_id,
+            seq,
+            claimIndex=0,
+            claim={
+                "claim_text": demo_clip.claim,
+                "raw_quote": demo_clip.claim,
+                "start_time": req.startTime,
+                "end_time": req.endTime,
+                "topics": ["demo"],
+            },
+        )
+        yield event
+
+        event, _seq = await _emit("done", run_id, seq, result=demo_clip.model_dump())
+        yield event
+        return
 
     if req.captions:
         chunks = [{"text": req.captions, "timestamp": req.startTime}]

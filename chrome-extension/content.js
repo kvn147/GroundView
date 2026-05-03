@@ -15,6 +15,7 @@
   let timelineSyncInterval = null;
 
   const CLAIM_ACTIVE_PADDING_SECONDS = 8;
+  const HARDCODED_DEMO_VIDEO_IDS = new Set(["jCsL4Wmndho", "d4Tinv8DMBM"]);
 
   // ── Helpers ──
 
@@ -1097,22 +1098,28 @@
       return;
     }
 
-    console.log("[FactChecker] Video is political, proceeding with transcript extraction...");
-
-    try {
-      currentTranscriptSegments = await fetchTranscriptSegments();
-      console.log("[FactChecker] Transcript extracted:", currentTranscriptSegments.length, "segments");
-      const upload = await API_uploadTranscript(window.location.href, currentTranscriptSegments);
-      currentTranscriptId = upload.transcriptId;
-      console.log("[FactChecker] Transcript uploaded:", {
-        transcriptId: upload.transcriptId,
-        chunkCount: upload.chunkCount,
-        totalCharacters: upload.totalCharacters
-      });
-    } catch (error) {
+    if (HARDCODED_DEMO_VIDEO_IDS.has(videoId)) {
       currentTranscriptId = null;
       currentTranscriptSegments = [];
-      console.error("[FactChecker] Transcript extraction/upload failed:", error.message || error);
+      console.log("[FactChecker] Hard-coded demo video detected; skipping YouTube transcript scrape.");
+    } else {
+      console.log("[FactChecker] Video is political, proceeding with transcript extraction...");
+
+      try {
+        currentTranscriptSegments = await fetchTranscriptSegments();
+        console.log("[FactChecker] Transcript extracted:", currentTranscriptSegments.length, "segments");
+        const upload = await API_uploadTranscript(window.location.href, currentTranscriptSegments);
+        currentTranscriptId = upload.transcriptId;
+        console.log("[FactChecker] Transcript uploaded:", {
+          transcriptId: upload.transcriptId,
+          chunkCount: upload.chunkCount,
+          totalCharacters: upload.totalCharacters
+        });
+      } catch (error) {
+        currentTranscriptId = null;
+        currentTranscriptSegments = [];
+        console.error("[FactChecker] Transcript extraction/upload failed:", error.message || error);
+      }
     }
 
     // Step 2: Full analysis

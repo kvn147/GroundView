@@ -188,6 +188,43 @@ async def test_sync_video_endpoint_consumes_stream_result(mocked_pipeline) -> No
 
 
 @pytest.mark.asyncio
+async def test_demo_video_endpoint_uses_hard_coded_fixture(monkeypatch) -> None:
+    async def fail_extract_claims(text: str, timestamp: float):
+        raise AssertionError("Demo videos should not call the live extractor")
+
+    monkeypatch.setattr(video, "extract_claims", fail_extract_claims)
+
+    response = await video.analyze_video(
+        video.AnalyzeVideoRequest(
+            url="https://www.youtube.com/watch?v=jCsL4Wmndho",
+        )
+    )
+
+    assert response["trustworthinessLabel"] == "Demo / Needs Context"
+    assert len(response["claims"]) == 5
+    assert response["claims"][0]["id"] == "demo-iran-1"
+
+
+@pytest.mark.asyncio
+async def test_demo_clip_endpoint_uses_hard_coded_fixture(monkeypatch) -> None:
+    async def fail_extract_claims(text: str, timestamp: float):
+        raise AssertionError("Demo clips should not call the live extractor")
+
+    monkeypatch.setattr(video, "extract_claims", fail_extract_claims)
+
+    response = await video.analyze_clip(
+        video.AnalyzeClipRequest(
+            url="https://www.youtube.com/watch?v=d4Tinv8DMBM",
+            startTime=400.0,
+            endTime=412.0,
+        )
+    )
+
+    assert response["verdict"] == "Demo"
+    assert "free to release tax returns" in response["claim"]
+
+
+@pytest.mark.asyncio
 async def test_analyze_clip_events_emit_done_response(mocked_pipeline) -> None:
     req = video.AnalyzeClipRequest(
         url="https://youtu.be/x",
