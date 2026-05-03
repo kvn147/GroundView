@@ -1,5 +1,13 @@
 # Sources
 
+## Universal Fact Checkers (Priority)
+- PolitiFact
+- FactCheck.org
+- Snopes
+- Associated Press Fact Check
+- Reuters Fact Check
+- Washington Post Fact Checker
+
 ## Healthcare
 - BLS (Bureau of Labor Statistics) for healthcare economic/employment data.
 - CDC, NIH, WHO for medical and epidemiological data.
