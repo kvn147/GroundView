@@ -17,7 +17,7 @@ from backend.agents.agent_crime import retrieve_evidence as cr_retrieve
 from backend.agents.agent_economy import retrieve_evidence as ec_retrieve
 from backend.agents.agent_education import retrieve_evidence as ed_retrieve
 
-async def test_edge_cases():
+async def main():
     if not os.getenv("OPENROUTER_API_KEY"):
         print("Error: OPENROUTER_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
@@ -76,4 +76,4 @@ async def test_edge_cases():
         print("\n\n")
 
 if __name__ == "__main__":
-    asyncio.run(test_edge_cases())
+    asyncio.run(main())

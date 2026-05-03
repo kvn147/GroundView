@@ -1,0 +1,156 @@
+"""Tests for the SSE analysis pipeline.
+
+The stream is now the source of truth for analysis progress. These
+tests mock the expensive L1/L2/L3/L4 calls and lock down the event
+contract that the Chrome extension consumes.
+"""
+
+from __future__ import annotations
+
+import sys
+from types import ModuleType
+from types import SimpleNamespace
+
+import pytest
+
+if "openai" not in sys.modules:
+    openai_stub = ModuleType("openai")
+
+    class AsyncOpenAI:
+        def __init__(self, *args, **kwargs) -> None:
+            self.chat = SimpleNamespace(
+                completions=SimpleNamespace(create=self._create)
+            )
+
+        async def _create(self, *args, **kwargs):
+            raise AssertionError("OpenAI should be mocked out in SSE API tests")
+
+    openai_stub.AsyncOpenAI = AsyncOpenAI
+    sys.modules["openai"] = openai_stub
+
+if "youtube_transcript_api" not in sys.modules:
+    transcript_stub = ModuleType("youtube_transcript_api")
+
+    class YouTubeTranscriptApi:
+        @staticmethod
+        def get_transcript(video_id: str):
+            raise AssertionError("Transcript fetch should be mocked in SSE tests")
+
+    transcript_stub.YouTubeTranscriptApi = YouTubeTranscriptApi
+    sys.modules["youtube_transcript_api"] = transcript_stub
+
+from backend.api import video
+from backend.app.level2b_routing.types import RoutingDecision
+from backend.contracts import EvidenceItem, Source, VerificationResult
+
+
+class FakeOrchestrator:
+    async def run(self, claim_text: str, routed_topics: list[str]):
+        return SimpleNamespace(
+            results=[
+                VerificationResult(
+                    agent="EconomyAgent",
+                    claim_text=claim_text,
+                    allowed_sources=["BLS"],
+                    queried_sources=["BLS"],
+                    evidence_items=[
+                        EvidenceItem(
+                            text="The evidence supports the claim.",
+                            source=Source(name="BLS", url="https://bls.gov"),
+                            p_entail=0.9,
+                            p_contradict=0.1,
+                            nli_source="agent",
+                        )
+                    ],
+                )
+            ],
+            unrouted_topics=[],
+        )
+
+
+@pytest.fixture
+def mocked_pipeline(monkeypatch):
+    async def fake_get_transcript(url: str):
+        return [{"text": "Inflation was 3 percent.", "timestamp": 12.0}]
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return [
+            {
+                "claim": "Inflation was 3 percent.",
+                "raw_quote": "Inflation was 3 percent.",
+                "timestamp": timestamp,
+            }
+        ]
+
+    def fake_route(claim_text: str):
+        return RoutingDecision(
+            claim_text=claim_text,
+            routed_topics=["economy"],
+            routing_method="keyword",
+            routing_confidence=0.9,
+        )
+
+    async def fake_confidence(claim_text: str, evidence_items: list[EvidenceItem]):
+        return {
+            "final_score": 0.8,
+            "verdict": "True",
+            "warning": "",
+        }
+
+    monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+    monkeypatch.setattr(video, "l2b_route", fake_route)
+    monkeypatch.setattr(video, "calculate_confidence_structured", fake_confidence)
+    monkeypatch.setattr(video, "_orchestrator", FakeOrchestrator())
+
+
+@pytest.mark.asyncio
+async def test_analyze_video_events_emit_incremental_contract(mocked_pipeline) -> None:
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    names = [event["event"] for event in events]
+
+    assert names == [
+        "run_started",
+        "transcript_ready",
+        "claim_extracted",
+        "claim_routed",
+        "agent_result",
+        "claim_final",
+        "summary_updated",
+        "done",
+    ]
+
+    claim_final = next(event for event in events if event["event"] == "claim_final")
+    assert claim_final["payload"]["claim"]["text"] == "Inflation was 3 percent."
+    assert claim_final["payload"]["claim"]["verdict"] == "True"
+
+    done = events[-1]
+    assert done["payload"]["result"]["claims"][0]["text"] == "Inflation was 3 percent."
+    assert done["payload"]["result"]["trustworthinessScore"] == 5
+
+
+@pytest.mark.asyncio
+async def test_sync_video_endpoint_consumes_stream_result(mocked_pipeline) -> None:
+    response = await video.analyze_video(
+        video.AnalyzeVideoRequest(url="https://youtu.be/x")
+    )
+
+    assert response["claims"][0]["text"] == "Inflation was 3 percent."
+    assert response["claims"][0]["verdict"] == "True"
+
+
+@pytest.mark.asyncio
+async def test_analyze_clip_events_emit_done_response(mocked_pipeline) -> None:
+    req = video.AnalyzeClipRequest(
+        url="https://youtu.be/x",
+        startTime=10.0,
+        endTime=20.0,
+        captions="Inflation was 3 percent.",
+    )
+    events = [event async for event in video.analyze_clip_events(req)]
+
+    assert events[-1]["event"] == "done"
+    result = events[-1]["payload"]["result"]
+    assert result["claim"] == "Inflation was 3 percent."
+    assert result["verdict"] == "True"
+    assert result["sources"] == [{"name": "BLS", "url": "https://bls.gov"}]

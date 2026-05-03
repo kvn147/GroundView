@@ -9,6 +9,7 @@
   let recordStartTime = 0;
   let recordTimerInterval = null;
   let clipResults = [];
+  let activeAnalysisCancel = null;
 
   // ── Helpers ──
 
@@ -37,7 +38,23 @@
     return `ytfc-score-${score}`;
   }
 
+  function emptyVideoAnalysis() {
+    return {
+      summary: "Analyzing video for political claims...",
+      trustworthinessScore: 3,
+      maxScore: 5,
+      trustworthinessLabel: "Analyzing",
+      politicalLean: { label: "Unknown", value: 0.5 },
+      claims: [],
+      aggregatedSources: []
+    };
+  }
+
   function cleanup() {
+    if (activeAnalysisCancel) {
+      activeAnalysisCancel();
+      activeAnalysisCancel = null;
+    }
     document.querySelectorAll(".ytfc-card, .ytfc-loading-card, .ytfc-clip-sidebar").forEach((el) => el.remove());
     const btn = document.querySelector(".ytfc-record-btn");
     if (btn) btn.remove();
@@ -245,6 +262,27 @@
     addClipLoading();
 
     const videoUrl = window.location.href;
+    if (typeof API_streamClipAnalysis === "function") {
+      let settled = false;
+      API_streamClipAnalysis(videoUrl, recordStartTime, endTime, {
+        onDone: (event) => {
+          settled = true;
+          removeClipLoading();
+          clipResults.unshift(event.result);
+          renderClipSidebar();
+        },
+        onConnectionError: async () => {
+          if (settled) return;
+          settled = true;
+          const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
+          removeClipLoading();
+          clipResults.unshift(result);
+          renderClipSidebar();
+        }
+      });
+      return;
+    }
+
     const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
 
     removeClipLoading();
@@ -366,8 +404,46 @@
     }
 
     // Step 2: Full analysis
-    const analysis = await API_getFullAnalysis(window.location.href);
-    injectFactCheckCard(analysis);
+    if (typeof API_streamFullAnalysis === "function") {
+      const analysis = emptyVideoAnalysis();
+      let settled = false;
+
+      activeAnalysisCancel = API_streamFullAnalysis(window.location.href, {
+        onClaimFinal: (event) => {
+          analysis.claims[event.claimIndex] = event.claim;
+          injectFactCheckCard(analysis);
+        },
+        onSummaryUpdated: (event) => {
+          analysis.summary = event.summary;
+          analysis.trustworthinessScore = event.trustworthinessScore;
+          analysis.maxScore = event.maxScore;
+          analysis.trustworthinessLabel = event.trustworthinessLabel;
+          analysis.politicalLean = event.politicalLean;
+          analysis.aggregatedSources = event.aggregatedSources;
+          injectFactCheckCard(analysis);
+        },
+        onDone: (event) => {
+          settled = true;
+          activeAnalysisCancel = null;
+          injectFactCheckCard(event.result);
+        },
+        onStreamError: (event) => {
+          console.warn("[FactChecker] recoverable stream error:", event);
+        },
+        onConnectionError: async () => {
+          if (settled) return;
+          settled = true;
+          activeAnalysisCancel = null;
+          const fallback = await API_getFullAnalysis(window.location.href);
+          injectFactCheckCard(fallback);
+        }
+      });
+
+      injectFactCheckCard(analysis);
+    } else {
+      const analysis = await API_getFullAnalysis(window.location.href);
+      injectFactCheckCard(analysis);
+    }
 
     // Step 3: Inject record button & sidebar
     injectRecordButton();

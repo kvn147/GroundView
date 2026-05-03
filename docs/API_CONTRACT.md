@@ -1,7 +1,7 @@
 # Frontend-Backend API Contract
 
-**Status:** Current (Synchronous MVP)
-*Note: This contract reflects the synchronous `POST` endpoints designed specifically to cater to the current `chrome-extension` mock expectations. The real-time WebSocket streaming architecture has been postponed.*
+**Status:** Current (SSE-first, synchronous compatibility retained)
+*Note: The Chrome extension now prefers Server-Sent Events for analysis progress. The original synchronous `POST` endpoints remain as compatibility wrappers and return the final accumulated result. See [SSE_DESIGN.md](SSE_DESIGN.md) for the event contract.*
 
 ## Base URL
 Local Development: `http://localhost:8000/api`
@@ -32,8 +32,33 @@ Local Development: `http://localhost:8000/api`
 ---
 
 ## 2. Full Video Analysis
+**Streaming Endpoint:** `GET /analyze-video/stream?url=...`
+**Purpose:** Streams the end-to-end extraction and fact-checking pipeline as named Server-Sent Events. The stream emits progress events such as `run_started`, `transcript_ready`, `claim_extracted`, `claim_routed`, `agent_result`, `claim_final`, `summary_updated`, and final `done`.
+
+**Final `done` payload:**
+```json
+{
+  "type": "done",
+  "runId": "run-abc",
+  "seq": 8,
+  "timestamp": "2026-05-03T12:00:00+00:00",
+  "result": {
+    "summary": "This video contains several political claims with mixed accuracy...",
+    "trustworthinessScore": 3,
+    "maxScore": 5,
+    "trustworthinessLabel": "Mixed Accuracy",
+    "politicalLean": {
+      "label": "Unknown",
+      "value": 0.5
+    },
+    "claims": [],
+    "aggregatedSources": []
+  }
+}
+```
+
 **Endpoint:** `POST /analyze-video`
-**Purpose:** Triggers the end-to-end extraction and fact-checking pipeline for a full YouTube video. *Warning: As a synchronous endpoint, this request will block until the entire pipeline (transcript fetch -> LLM extraction -> domain routing -> evidence retrieval) is completed.*
+**Purpose:** Compatibility wrapper that consumes the same streaming pipeline internally and returns only the final result. *Warning: This request will block until the entire pipeline is completed.*
 
 **Request Body:**
 ```json
@@ -70,8 +95,11 @@ Local Development: `http://localhost:8000/api`
 ---
 
 ## 3. Manual Clip Analysis
+**Streaming Endpoint:** `GET /analyze-clip/stream?url=...&startTime=120.5&endTime=180.0&captions=...`
+**Purpose:** Streams analysis for a bounded timestamp window. The final `done.result` matches the clip response shape below.
+
 **Endpoint:** `POST /analyze-clip`
-**Purpose:** Analyzes a specific, manually-recorded timestamp window from a video. 
+**Purpose:** Compatibility wrapper that analyzes a specific, manually-recorded timestamp window from a video and returns only the final result.
 
 **Request Body:**
 ```json
