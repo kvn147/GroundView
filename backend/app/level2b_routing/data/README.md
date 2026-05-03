@@ -6,11 +6,17 @@ itself is a logistic-regression model trained on synthetic claims; see
 
 ## Files
 
-- `synthetic_train.csv` — **gitignored.** Generated via a separate
-  browser-Claude session and dropped here before training. Regenerate
-  any time the topic taxonomy or keyword tables change meaningfully.
-- `real_test.csv` — **committed.** Hand-annotated claims used as a
-  held-out evaluation set. Keep small (tens of rows) and high-signal.
+- `synthetic_train_*.csv` — **committed.** Numbered batches of
+  generated training claims spanning the 8-topic taxonomy.
+- `liar_train.csv` / `liar_eval.csv` — **committed.** Real political
+  claims from the LIAR dataset (Wang 2017), remapped to the 8-topic
+  taxonomy by `fetch_liar.py`. ~10k rows training, ~200 eval.
+- `combined_train.csv` — **committed.** The synthetic batches + LIAR
+  training set concatenated and deduped. This is what
+  `train.py` consumes by default. Regenerate when synthetic batches
+  or LIAR are updated.
+- `real_test.csv` — hand-annotated claims used as a held-out
+  evaluation set. Keep small (tens of rows) and high-signal.
 
 ## CSV schema
 
@@ -46,8 +52,17 @@ claim_text,immigration,healthcare,crime,economy,education
 
 ```
 python -m backend.app.level2b_routing.classifier.train \
-    backend/app/level2b_routing/data/synthetic_train.csv \
+    backend/app/level2b_routing/data/combined_train.csv \
     --out backend/app/level2b_routing/classifier/model.pkl
 ```
 
-`model.pkl` is gitignored — every developer trains locally.
+`model.pkl` is **not committed** — at 32 MB it overruns git's default
+HTTPS push buffer and breaks pushes for everyone else. Every
+contributor trains it locally once after clone using the command
+above. The pin on `scikit-learn==1.8.0` and `joblib==1.5.3` (see
+`backend/requirements.txt`) keeps the artifact reproducible: as long
+as you install the pinned deps, training on the committed
+`combined_train.csv` produces a model the router will accept.
+
+Retrain whenever the topic taxonomy, keyword tables, or training data
+change.

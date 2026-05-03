@@ -36,7 +36,14 @@ clips/videos/
 backend/eval/reports/
 *.cache
 
-# Level 2b routing — large generated artifacts (regenerable from inputs)
-backend/app/level2b_routing/data/combined_train.csv
+# Level 2b routing — combined_train.csv is committed (the data is
+# the durable artifact). model.pkl is NOT committed because git over
+# HTTPS chokes on the 32 MB pickle. Every contributor trains locally
+# once after clone:
+#   python -m backend.app.level2b_routing.classifier.train \
+#       backend/app/level2b_routing/data/combined_train.csv \
+#       --out backend/app/level2b_routing/classifier/model.pkl
+# Pinned scikit-learn==1.8.0 + joblib==1.5.3 in requirements.txt so
+# every local retrain produces a load-compatible artifact.
 backend/app/level2b_routing/data/synthetic_train.csv
 *.pkl

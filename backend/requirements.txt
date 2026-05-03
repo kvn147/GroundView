@@ -5,8 +5,8 @@ openai
 pytest
 google-genai
 python-dotenv
-scikit-learn
-joblib
+scikit-learn==1.8.0
+joblib==1.5.3
 numpy
 pandas
 pytest
