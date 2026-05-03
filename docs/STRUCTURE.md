@@ -112,14 +112,18 @@ beaverhacks-project/
 ### Backend (live, end-to-end)
 - **`main.py`** — FastAPI app with CORS, includes `/api` router, uvicorn entrypoint on `:8000`.
 - **`POST /api/check-political`** — currently mocked-true so the rest of the pipeline runs.
-- **`POST /api/analyze-video`** — full L1→L5 pipeline:
-  - L1 transcript via `core/transcript.py` (YouTube captions, 60s chunks, 10s overlap)
-  - L2a claim extraction via `core/extract.py` (Haiku 4.5)
-  - L2b topic routing via `app/level2b_routing/router.route()` — local, multi-label, no LLM
-  - L3 fan-out via `agents/orchestrator.AgentOrchestrator` — concurrent, bounded, hard allowlist
-  - L4b confidence via `agents/judge.calculate_confidence_structured` — skips NLI when agent pre-filled
-  - L4a/L5-prep via `agents/aggregator.aggregate_annotations` — pure Python rules, no LLM
-- **`POST /api/analyze-clip`** — same pipeline scoped to a single chunk; accepts caption-text override.
+- **`POST /api/analyze-video`** / **`GET /api/analyze-video/stream`** — full L1→L5 pipeline:
+  - L1 transcript via `core/transcript.py` (caption text uploaded by the extension; server normalizes + chunks to 60s windows with 10s overlap)
+  - L2a claim extraction via `core/extract.py` (Haiku 4.5) — returns `ExtractionResult{facts, opinions}`
+  - **Fact track:**
+    - L2b topic routing via `app/level2b_routing/router.route()` — local, multi-label, no LLM
+    - L3 fan-out via `agents/orchestrator.AgentOrchestrator` — concurrent, bounded, hard allowlist
+    - L4b confidence via `agents/judge.calculate_confidence_structured` — skips NLI when agent pre-filled
+  - **Opinion track:**
+    - L3 single-agent via `agents/agent_opinion.OpinionAgent` — allowlist sourced from `data/media_bias.csv`, Tier A skipped, Tier B emits per-outlet stance
+    - L4b lean via `agents/judge.calculate_lean_structured` — pure-Python `stance × source_bias × source_trust` aggregation
+  - L5 rendering via `core/aggregation.aggregate(annotations, opinion_annotations)` — bifurcated: trustworthinessScore from facts only, politicalLean from opinions only
+- **`POST /api/analyze-clip`** / **`GET /api/analyze-clip/stream`** — same fact pipeline scoped to a single chunk; accepts caption-text override. Opinions are intentionally skipped on the clip path.
 
 ### L3 enforcement (the ConductorOne thesis as code)
 - Every agent extends `AllowlistedAgent`. `ALLOWED_SOURCES` is a frozenset declared at the class level.
