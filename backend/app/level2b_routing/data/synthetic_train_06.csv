@@ -1,0 +1,79 @@
+# Constraint: E (no numbers — claims are descriptive, comparative, or attributive only)
+claim_text,immigration,healthcare,crime,economy,education
+"The administration imposed stricter eligibility criteria for asylum seekers arriving at the southern border.",1,0,0,0,0
+"Senator Halverson argued that current visa allocations failed to meet workforce demand in the agricultural sector.",1,0,0,0,0
+"Border Patrol implemented new processing protocols that increased same-day removals at official crossings.",1,0,0,0,0
+"Governor Aldridge directed state agencies to halt cooperation with federal immigration enforcement actions.",1,0,1,0,0
+"Refugee admissions during the most recent fiscal year reached the highest level in over a decade.",1,0,0,0,0
+"Representative Norquist co-sponsored legislation expanding pathways to citizenship for long-term residents.",1,0,0,0,0
+"USCIS announced policy changes affecting the processing of work authorization for parolees.",1,0,0,0,0
+"Customs and Border Protection deployed additional canine units along the southwestern border corridor.",1,0,1,0,0
+"Mayor Castellanos rejected federal proposals to convert public buildings into temporary migrant housing.",1,0,0,0,0
+"AG Burroughs filed federal challenges to state laws that imposed criminal penalties for unauthorized presence.",1,0,1,0,0
+"DACA recipients faced renewed uncertainty after a federal appeals court issued its latest ruling.",1,0,0,0,0
+"Senator Pellegrino voted against expanding work authorization for spouses of guest workers.",1,0,0,1,0
+"The State Department adjusted refugee processing categories to prioritize applicants from active conflict zones.",1,0,0,0,0
+"Governor Mehrotra signed legislation prohibiting the use of state funds to support federal detention operations.",1,0,1,0,0
+"Detained migrants reported delays in accessing legal counsel during their initial removal proceedings.",1,0,1,0,0
+"Hospital systems in major metropolitan areas reported persistent shortages of registered nurses.",0,1,0,0,0
+"Senator Fitzwilliam introduced legislation requiring price transparency for prescription drugs covered by Medicare.",0,1,0,0,0
+"The FDA accelerated review timelines for novel therapies addressing rare pediatric conditions.",0,1,0,0,0
+"Governor Rasmussen signed an executive order expanding access to gender-affirming care in state facilities.",0,1,0,0,0
+"Maternal health outcomes in rural counties continued to lag those in urban areas by significant margins.",0,1,0,0,0
+"Representative Calloway co-sponsored a bill expanding mental health parity enforcement under federal law.",0,1,0,0,0
+"Pharmacy benefit managers faced bipartisan scrutiny over their role in determining drug pricing structures.",0,1,0,0,0
+"AG Schweitzer announced an investigation into anti-competitive practices among regional hospital systems.",0,1,1,1,0
+"The Department of Veterans Affairs expanded its mental health services to include rural community partnerships.",0,1,0,0,0
+"Senator Yarborough voted against legislation eliminating Medicaid coverage for non-emergency dental care.",0,1,0,0,0
+"Hospital workers in major chains continued organizing efforts despite resistance from facility management.",0,1,0,1,0
+"Governor Eldridge proposed a state pharmaceutical purchasing pool to negotiate lower prices for public employees.",0,1,0,1,0
+"The Indian Health Service expanded telehealth options for tribal members in remote regions.",0,1,0,0,0
+"Mayor Borenstein announced expanded partnerships between city hospitals and community health workers.",0,1,0,0,0
+"Federal regulators warned of potential shortages in commonly prescribed generic medications.",0,1,0,0,0
+"Senator Whitcombe introduced legislation banning surprise medical billing across all federally regulated insurance plans.",0,1,0,0,0
+"Public health officials warned of declining childhood vaccination rates across multiple states.",0,1,0,0,0
+"Carjackings in major metropolitan areas declined for the second consecutive reporting period.",0,0,1,0,0
+"Senator Meriwether voted against a bill expanding mandatory minimum sentences for fentanyl distribution.",0,0,1,0,0
+"State prisons across the country grappled with persistent staffing shortages affecting daily operations.",0,0,1,0,0
+"Representative Whitfield introduced legislation establishing a federal task force on missing and murdered Indigenous women.",0,0,1,0,0
+"AG Pavlovic announced charges against a regional drug trafficking enterprise spanning multiple states.",0,0,1,0,0
+"Police departments in major cities adopted new use-of-force policies emphasizing de-escalation training.",0,0,1,0,0
+"Governor Krasniqi commuted death sentences for individuals on the state's death row before her term ended.",0,0,1,0,0
+"The FBI reported a continued rise in hate crimes targeting religious institutions across the country.",0,0,1,0,0
+"Federal prosecutors brought charges in a sprawling securities fraud case involving multiple investment firms.",0,0,1,1,0
+"Senator Lavinia Steiger co-sponsored legislation banning the use of solitary confinement for juveniles.",0,0,1,0,0
+"Mayor Akinwumi expanded a community violence interruption program to include additional neighborhoods.",0,0,1,0,0
+"Representative Halloran voted to advance legislation addressing wrongful convictions in federal cases.",0,0,1,0,0
+"State courts reported continued backlogs in processing post-conviction relief petitions.",0,0,1,0,0
+"AG Branfield announced settlements with major payday lenders over predatory lending practices.",0,0,1,1,0
+"Inflation in major metropolitan areas continued to outpace wage growth in service sector industries.",0,0,0,1,0
+"The Federal Reserve held interest rates steady at its most recent policy meeting.",0,0,0,1,0
+"Manufacturing employment in the industrial Midwest faced renewed pressure from automaker layoffs.",0,0,0,1,0
+"Senator Drumheller introduced legislation extending tax credits for renewable energy manufacturing facilities.",0,0,0,1,0
+"Small business owners reported continued difficulty finding qualified workers for skilled trades positions.",0,0,0,1,0
+"Governor Quincy proposed eliminating the state's grocery sales tax in his upcoming budget address.",0,0,0,1,0
+"Representative Ostermeier voted against an amendment that would have repealed federal estate tax provisions.",0,0,0,1,0
+"The trade deficit with major Asian economies widened during the most recent reporting period.",0,0,0,1,0
+"AG Wessinger filed antitrust charges against major airlines over capacity-restriction agreements.",0,0,1,1,0
+"Mayor Harborough announced a public-private partnership to revitalize the downtown commercial district.",0,0,0,1,0
+"Senator Vannucci voted to extend pandemic-era expansions of the federal earned income tax credit.",0,0,0,1,0
+"Manufacturing wages grew faster than service-sector wages for the first time in several reporting cycles.",0,0,0,1,0
+"The agricultural sector reported continued consolidation as smaller family farms exited the industry.",0,0,0,1,0
+"Governor Lichtenberg signed legislation establishing a state venture fund for women-owned businesses.",0,0,0,1,0
+"Federal Reserve research linked rising housing costs to declining homeownership rates among young adults.",0,0,0,1,0
+"Representative Albemarle introduced legislation targeting price-fixing among major grocery chains.",0,0,1,1,0
+"Reading proficiency among elementary school students declined according to recent federal assessments.",0,0,0,0,1
+"Senator Drummond co-sponsored legislation expanding federal grants for school-based mental health services.",0,1,0,0,1
+"State universities reported continued declines in international student enrollment from major sending countries.",0,0,0,0,1
+"Governor Wexler signed legislation expanding state-funded preschool to additional school districts.",0,0,0,0,1
+"Representative Yoshida voted to extend Pell grant eligibility to short-term workforce training programs.",0,0,0,1,1
+"Public school districts faced growing pressure to address curriculum disputes raised by parent groups.",0,0,0,0,1
+"AG Treadwell announced settlements with for-profit colleges over deceptive recruitment practices.",0,0,1,1,1
+"Mayor Cardenas announced expanded after-school tutoring programs for middle school students citywide.",0,0,0,0,1
+"Senator Pendergast introduced legislation tying community college tuition assistance to local workforce demand.",0,0,0,1,1
+"State legislatures across multiple states debated new accountability measures for charter school operators.",0,0,0,0,1
+"Representative Holzapfel co-sponsored a bill creating tax credits for employers offering tuition reimbursement.",0,0,0,1,1
+"Governor Mountbatten vetoed legislation that would have eliminated tenure protections for public university faculty.",0,0,0,1,1
+"Federal regulators issued new guidance on accessibility requirements for online learning platforms.",0,0,0,0,1
+"School districts in fast-growing regions reported continued challenges meeting facility capacity demands.",0,0,0,0,1
+"Senator Brzezinski voted against legislation eliminating federal oversight of private education providers.",0,0,0,0,1

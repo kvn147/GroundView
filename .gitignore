@@ -35,3 +35,8 @@ Thumbs.db
 clips/videos/
 backend/eval/reports/
 *.cache
+
+# Level 2b routing — large generated artifacts (regenerable from inputs)
+backend/app/level2b_routing/data/combined_train.csv
+backend/app/level2b_routing/data/synthetic_train.csv
+*.pkl

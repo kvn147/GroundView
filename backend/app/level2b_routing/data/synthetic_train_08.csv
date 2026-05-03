@@ -1,0 +1,78 @@
+# Constraint: H (cross-topic — all rows multi-label, ≥2 topics; fresh speaker pool)
+claim_text,immigration,healthcare,crime,economy,education
+"Senator Achterberg introduced a bill linking SNAP eligibility to participation in workforce training or vocational education programs.",0,0,0,1,1
+"Representative Yelchin voted to tie federal hospital tax-exempt status to charity care provision in low-income school districts.",0,1,0,0,1
+"Governor Esquivel-Ramos signed legislation expanding Medicaid coverage for inmates exiting state correctional facilities into community programs.",0,1,1,0,0
+"Mayor Stojanovic announced a partnership between city hospitals and the local university to train bilingual community health workers.",1,1,0,0,1
+"AG Petrosyan filed criminal charges against two for-profit colleges over deceptive recruitment of veterans receiving disability benefits.",0,0,1,1,1
+"Senator Chakraborty co-sponsored legislation linking federal disaster relief funding to local healthcare infrastructure investments in border communities.",1,1,0,1,0
+"Representative Mwangi introduced a bill requiring federal contractors to verify legal work authorization while also mandating workplace safety training.",1,0,0,1,0
+"Governor Lindgren-Holst expanded Medicaid coverage for behavioral health services in juvenile justice settings statewide.",0,1,1,0,0
+"Mayor Talavera announced a citywide initiative providing free SAT preparation to children of farmworkers and recently arrived immigrants.",1,0,0,0,1
+"AG Vasilenko announced settlements with three pharmacy chains over fentanyl distribution near schools serving low-income neighborhoods.",0,1,1,0,1
+"Senator Ojuoluwa voted against a measure that would have privatized Medicaid managed care for incarcerated individuals.",0,1,1,0,0
+"Representative Halversohn-Kerr co-sponsored legislation expanding visas for nurses and teachers serving rural counties experiencing persistent workforce shortages.",1,1,0,0,1
+"Governor Mukhopadhyay signed a bill tying state university funding to graduation rates for students from incarcerated parent households.",0,0,1,1,1
+"Mayor Tjandra announced a $54 million investment in trauma-informed care for school staff in neighborhoods with elevated gun violence rates.",0,1,1,0,1
+"AG Sigursdottir filed civil rights complaints against three hospital systems over ER wait times in immigrant-majority neighborhoods.",1,1,0,0,0
+"Senator Eberhardt-Wisniewski's prescription drug bill would require pharmaceutical price disclosure for medications prescribed in federally funded school clinics.",0,1,0,1,1
+"Representative Quintessa Bjorn voted to expand Pell grants for incarcerated students pursuing healthcare credentialing programs in state prisons.",0,1,1,1,1
+"Governor Penninkilampi signed legislation creating a wage subsidy program for hospitals that hire formerly incarcerated certified nursing assistants.",0,1,1,1,0
+"Mayor Hassanpour announced an expansion of the city's housing voucher program tied to mental health support and employment counseling.",0,1,0,1,0
+"AG Demirjian-Phillips announced charges in a $42 million Medicaid fraud scheme targeting elderly residents of three Southwestern border counties.",1,1,1,0,0
+"Senator Kobayashi-Wendt introduced a bill expanding federal funding for school-based health clinics in counties with elevated opioid overdose rates.",0,1,1,0,1
+"Representative Adesuyi voted to extend the child tax credit while also expanding eligibility for free school meals nationwide.",0,0,0,1,1
+"Governor Cervantes-Dahlquist signed legislation expanding employment protections for healthcare workers organizing union representation campaigns.",0,1,0,1,0
+"Mayor Trinh-Eriksson announced an expansion of the city's gun buyback program funded through hospital tax-exempt obligations.",0,1,1,1,0
+"AG Voinovich filed civil charges against three landlords for systematically excluding voucher holders and refugee resettlement clients.",1,0,1,1,0
+"Senator Hadjiargyrou voted to expand Medicaid asset-recovery limits while also funding rural hospital workforce retention grants.",0,1,0,1,0
+"Representative Sotomayor-Levine co-sponsored a bill creating tax credits for employers hiring incarcerated individuals into healthcare apprenticeships.",0,1,1,1,1
+"Governor Beauchamp-Kowalski expanded the state's Medicaid behavioral health coverage to include culturally competent services for refugee and asylum-seeker populations.",1,1,0,0,0
+"Mayor Quintanilla announced a citywide pilot offering free community college tuition to children of essential healthcare workers.",0,1,0,1,1
+"AG Mortensen-Brodsky filed antitrust complaints against three pharmacy benefit managers for coordinated rebate practices affecting state-regulated insurance plans.",0,1,0,1,0
+"Senator Diop-Lehmann introduced a bill expanding green card eligibility for healthcare workers in shortage counties while also creating new employer accountability mechanisms.",1,1,0,1,0
+"Representative Brattlie voted to extend pandemic-era expansions of the federal earned income tax credit along with permanent telehealth coverage under Medicare.",0,1,0,1,0
+"Governor Khoshrou expanded mental health crisis response teams to include cultural liaisons for immigrant communities while also funding peer support specialists.",1,1,0,0,0
+"Mayor Adamopoulos-Ferreira announced a partnership between city hospitals and three community colleges to expand the medical interpreter workforce.",1,1,0,1,1
+"AG Schaffhausen-Iyer announced settlements with three opioid distributors funding treatment beds in Appalachian counties with elevated overdose mortality.",0,1,1,1,0
+"Senator Tashkentbayev voted against a bill that would have eliminated DACA protections while expanding federal funding for vocational education programs.",1,0,0,0,1
+"Representative Olusegun-Hartmann co-sponsored a bill requiring colleges to disclose campus crime data alongside post-graduation employment outcomes.",0,0,1,1,1
+"Governor Rasmussen-Park signed legislation funding 1,400 new affordable housing units paired with on-site mental health services for residents.",0,1,0,1,0
+"Mayor Calderon-Skarsgard announced a $32 million bond funding both school facility upgrades and after-school violence prevention programs in three neighborhoods.",0,0,1,1,1
+"AG Petrenko-Adisa filed federal civil rights charges against three deputies for excessive force incidents involving individuals experiencing mental health crises.",0,1,1,0,0
+"Senator Whitfield-Hirano introduced legislation expanding Medicare coverage of inpatient psychiatric care for federal law enforcement officers and Border Patrol agents.",1,1,0,0,0
+"Representative Bouchard-Singh voted to expand the federal Workforce Innovation and Opportunity Act funding to include incarcerated individuals near release.",0,0,1,1,1
+"Governor Mountcastle-Hauser expanded the state's earned income tax credit while simultaneously funding free preschool slots for children of working parents.",0,0,0,1,1
+"Mayor Onyebuchi-Sanchez announced a partnership pairing newly arrived migrant families with employment counseling and free English-language education.",1,0,0,1,1
+"AG Vasquez-Carmichael's office investigated wage theft complaints affecting 2,200 immigrant agricultural workers across three counties.",1,0,1,1,0
+"Senator Korhonen-Aldiss co-sponsored legislation creating tax credits for hospitals that provide free care to uninsured patients in border communities.",1,1,0,1,0
+"Representative Esmeralda Pemberton-Vance voted to expand veterans' education benefits to cover apprenticeships in healthcare occupations.",0,1,0,1,1
+"Governor Saavedra-Trevino signed legislation establishing a state office to coordinate immigrant integration with workforce placement and adult education programs.",1,0,0,1,1
+"Mayor Sundgren-Fitzgerald announced a citywide expansion of community health workers serving both immigrant neighborhoods and individuals exiting county jails.",1,1,1,0,0
+"AG Brisbane-Olusanya announced indictments in a $128 million Medicare fraud scheme operating across hospitals in three Southern states.",0,1,1,0,0
+"Senator Lindholm-Achebe voted to advance legislation creating a federal commission on housing affordability with mandates examining its effects on health outcomes and educational stability.",0,1,0,1,1
+"Representative Cathcart-Mwende introduced a bill linking federal infrastructure grants to apprenticeship slots reserved for high school graduates from low-income communities.",0,0,0,1,1
+"Governor Persaud-Eichelberger expanded a state pilot pairing newly arrived refugees with healthcare apprenticeship programs and English-language training cohorts.",1,1,0,1,1
+"Mayor Eberhardt-Tashima announced an expansion of the city's summer jobs program to formerly incarcerated young adults and recent high school graduates.",0,0,1,1,1
+"AG Magnusson-Olawale filed criminal charges against four hospital executives in a coordinated wage suppression scheme affecting nursing staff in four states.",0,1,1,1,0
+"Senator Vesterbacka-Ojo co-sponsored a bill expanding federal mental health parity enforcement to include provider networks serving Medicaid populations.",0,1,0,1,0
+"Representative Hassanali-Brunner voted to extend Pell grant eligibility to short-term workforce credentialing programs in healthcare and skilled trades.",0,1,0,1,1
+"Governor Tikhomirov-Garcia signed legislation expanding Medicaid telehealth permanently while creating workforce loan repayment programs for rural primary care providers.",0,1,0,1,0
+"Mayor Akinwale-Pemberton announced a partnership pairing public school families with mental health support tied to the city's housing voucher program.",0,1,0,1,1
+"AG Petrov-Quinones filed civil rights suits against three jails for failing to provide adequate mental health treatment for individuals in pretrial detention.",0,1,1,0,0
+"Senator Whitcombe-Anand introduced legislation requiring colleges to disclose campus sexual assault statistics alongside graduation rates for student-athletes.",0,0,1,0,1
+"Representative Larsson-Mwangi co-sponsored a bill creating a federal grant program for school-based mental health services in rural counties.",0,1,0,0,1
+"Governor Adesoji-Becker expanded the state's right-to-counsel program for tenants while funding job training for landlords providing affordable housing.",0,0,1,1,0
+"Mayor Penninkilampi-Diaz announced an expansion of the city's restorative justice program to include public school disciplinary diversion partnerships.",0,0,1,0,1
+"AG Sokolova-Whitfield announced settlements with three telehealth providers over fraudulent prescribing practices targeting Medicare beneficiaries in five states.",0,1,1,0,0
+"Senator Achebe-Hayworth voted to expand the federal Earned Income Tax Credit while simultaneously funding rural hospital workforce retention grants.",0,1,0,1,0
+"Representative Marchetti-Onuoha introduced a bill creating tax credits for employers offering both apprenticeships and on-site mental health services.",0,1,0,1,1
+"Governor Lindstrom-Ojediran signed legislation funding both school construction bonds and trauma response services for educators in high-need districts.",0,1,0,1,1
+"Mayor Thorsteinsdottir-Olusola announced an expansion of the city's English-language workforce training tied to construction trade unions and community health worker certifications.",1,1,0,1,1
+"AG Kobayashi-Mwende filed antitrust complaints against major hospital chains for anti-competitive practices affecting border communities and rural counties.",1,1,0,1,0
+"Senator Feinberg-Tijani co-sponsored a bill expanding the federal grant program for evidence-based teacher mentoring in schools serving migrant children.",1,0,0,0,1
+"Representative Saxena-Kowalski voted against a constitutional amendment that critics said would force cuts to both Medicaid and federal student aid programs.",0,1,0,1,1
+"Governor Petersen-Adekunle expanded the state's prescription drug affordability board to include workforce development representatives and educator union appointees.",0,1,0,1,1
+"Mayor Yamada-Cervantes announced a citywide initiative pairing affordable housing vouchers with English-language education and employment counseling.",1,0,0,1,1
+"AG Brennan-Otieno announced indictments against eight individuals in a coordinated scheme targeting elderly Medicare beneficiaries with predatory loan products.",0,1,1,1,0
+"Senator Sangiovanni-Tanaka introduced a bill linking federal hospital funding to participation in school-based health programs for K-12 students.",0,1,0,0,1

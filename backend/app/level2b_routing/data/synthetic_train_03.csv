@@ -1,0 +1,78 @@
+# Constraint: A (every claim attributed to a woman in elected office; varied office levels)
+claim_text,immigration,healthcare,crime,economy,education
+"Senator Maria Chen voted against an amendment that would have stripped funding from refugee resettlement programs.",1,0,0,0,0
+"Representative Tashia Williams introduced legislation expanding fentanyl test strip distribution in 12 federal districts.",0,0,1,0,0
+"Governor Linnea Hartwell signed a bill capping insulin copays at $35 per month for state employees.",0,1,0,0,0
+"AG Priya Venkatesan filed federal charges against a hospital executive in a $94 million Medicare fraud scheme.",0,1,1,0,0
+"Mayor Imani Brooks announced that the city would expand its early childhood education program to 4,800 additional children.",0,0,0,0,1
+"State Senator Rosa Delgado co-sponsored legislation requiring background checks at all federally licensed gun shows.",0,0,1,0,0
+"Representative Yuki Nakamura voted to extend Pell grant eligibility to short-term workforce credentialing programs.",0,0,0,1,1
+"Governor Adaeze Onuoha vetoed a bill that would have eliminated state Medicaid coverage for emergency dental care.",0,1,0,0,0
+"Councilwoman Sarah Levenson introduced an ordinance requiring landlords to disclose rent-stabilization status at lease signing.",0,0,0,1,0
+"Senator Beatrice Holloway voted to reauthorize the Violence Against Women Act with expanded tribal jurisdiction.",0,0,1,0,0
+"Lieutenant Governor Mireille Boucher launched a state task force on prescription drug affordability for rural seniors.",0,1,0,0,0
+"Representative Genevieve Park co-sponsored legislation expanding visa quotas for nurses serving rural counties.",1,1,0,0,0
+"Mayor Esperanza Quintero announced a $32 million investment in violence interruption programs across four neighborhoods.",0,0,1,0,0
+"Senator Catalina Ruiz voted against a constitutional amendment requiring two-thirds majorities for federal tax increases.",0,0,0,1,0
+"Treasurer Anjali Shah announced that the state's pension fund had divested $1.4 billion from fossil fuel holdings.",0,0,0,1,0
+"Governor Tova Lindqvist signed legislation tying state university funding to graduation rates for first-generation students.",0,0,0,0,1
+"AG Adelaide Pemberton announced a settlement requiring three opioid manufacturers to pay $640 million to her state.",0,1,1,0,0
+"Representative Mei-Lin Cho introduced a bill creating a federal database of police use-of-force incidents.",0,0,1,0,0
+"State Representative Hannah Goldenberg voted to expand free school meals to all K-12 students statewide.",0,0,0,0,1
+"Senator Sarmistha Banerjee co-sponsored legislation expanding telehealth coverage for Medicare beneficiaries permanently.",0,1,0,0,0
+"Mayor Olamide Adesanya announced that the city would phase out cash bail for misdemeanor offenses by year end.",0,0,1,0,0
+"Comptroller Yelena Petrova projected a $2.1 billion budget surplus for the upcoming fiscal year.",0,0,0,1,0
+"Governor Cheyenne Stillwater vetoed a bill that would have expanded the state's voucher program to all income levels.",0,0,0,1,1
+"Senator Daria Mironov voted to extend the federal Earned Income Tax Credit expansion through 2028.",0,0,0,1,0
+"Representative Folake Adebayo introduced legislation requiring colleges to disclose campus sexual assault statistics annually.",0,0,1,0,1
+"AG Marisol Castaneda filed civil rights suits against three jails for failing to provide adequate mental health treatment.",0,1,1,0,0
+"Mayor Tabitha Aronson announced a partnership with the local hospital to provide trauma-informed care training for educators.",0,1,0,0,1
+"State Senator Inara Khoury voted against a measure that would have privatized state-run psychiatric hospitals.",0,1,0,0,0
+"Representative Soledad Vega co-sponsored a bill expanding green card eligibility for healthcare workers in shortage areas.",1,1,0,0,0
+"Governor Aiyana Crow announced an executive order halting state cooperation with federal immigration detainer requests.",1,0,1,0,0
+"Senator Charlotte Beauchamp introduced legislation funding workforce retraining programs in coal communities.",0,0,0,1,1
+"State Treasurer Penelope Dietrich reported that the state pension fund returned 8.4 percent over the past fiscal year.",0,0,0,1,0
+"Mayor Hina Yamamoto announced that the city would expand free preschool to 2,200 additional three-year-olds.",0,0,0,0,1
+"Representative Ofelia Ramirez voted against a bill that would have eliminated DACA protections for current recipients.",1,0,0,0,0
+"Governor Ingrid Solberg signed a bill establishing a $400 million venture fund for women-owned small businesses.",0,0,0,1,0
+"Senator Jamila Toure introduced legislation creating tax credits for employers who provide on-site childcare.",0,0,0,1,1
+"AG Eleni Papadopoulos announced a probe into algorithmic bias in healthcare claim denials by major insurers.",0,1,1,0,0
+"State Representative Sigrid Bjornson voted to expand federal grants for school-based mental health services.",0,1,0,0,1
+"Councilwoman Aisha Rahman introduced a resolution declaring the city a safe haven for reproductive healthcare access.",0,1,0,0,0
+"Governor Esperanza Cabrera vetoed legislation that would have eliminated the state's earned income tax credit.",0,0,0,1,0
+"Senator Wren Halloway co-sponsored a bill expanding federal drug pricing transparency requirements.",0,1,0,1,0
+"Representative Saoirse O'Brien voted to extend the child tax credit and expand its refundability.",0,0,0,1,0
+"Mayor Carmen Aragon announced a citywide initiative providing free SAT preparation to all public high school juniors.",0,0,0,0,1
+"AG Vivienne Lemoine filed criminal charges against three landlords for systematically excluding voucher holders.",0,0,1,1,0
+"State Senator Theodora Kapp voted against funding additional state correctional facilities in her district.",0,0,1,1,0
+"Governor Beatrix Ferdinand signed legislation expanding paid family leave to all private-sector workers statewide.",0,0,0,1,0
+"Representative Magnolia Pierce introduced a bill creating a federal grant for rural hospital workforce retention.",0,1,0,1,0
+"Senator Camille Foreman voted to advance legislation banning solitary confinement for individuals under 21.",0,0,1,0,0
+"Mayor Ottilie Vance announced that the city would invest $18 million in refurbishing aging school HVAC systems.",0,0,0,1,1
+"State Representative Ngozi Eze voted to expand the state's Medicaid coverage for postpartum care to one full year.",0,1,0,0,0
+"AG Bronwen Llewellyn announced indictments in a $48 million wage theft case affecting 2,200 hospitality workers.",0,0,1,1,0
+"Governor Hadley Sterling signed a bill increasing state per-pupil funding by $740 million over four years.",0,0,0,1,1
+"Senator Annika Sundberg co-sponsored legislation requiring Medicare to negotiate prices for the next 50 highest-cost drugs.",0,1,0,0,0
+"Representative Lakshmi Iyer voted against an amendment that would have eliminated Title IX funding enforcement.",0,0,0,0,1
+"Comptroller Renata Voss projected that state debt service would consume 7.8 percent of general fund revenue next year.",0,0,0,1,0
+"Mayor Chiamaka Okeke announced a partnership with three community colleges to expand healthcare workforce training.",0,1,0,0,1
+"State Senator Polina Karolinska voted to expand the state's renewable energy tax credit through 2030.",0,0,0,1,0
+"Governor Mariko Tanaka-Reeves signed legislation tying corporate tax incentives to apprenticeship hiring quotas.",0,0,0,1,1
+"AG Rosalind Whittaker filed antitrust complaints against three pharmacy benefit managers for anticompetitive rebate practices.",0,1,0,1,0
+"Senator Delphine Aubrey voted to advance legislation creating a federal commission on housing affordability.",0,0,0,1,0
+"Representative Kalinda Sutter introduced a bill expanding refundable adoption tax credits for foster families.",0,0,0,1,0
+"Mayor Astrid Halvorsen announced that the city had reduced unsheltered homelessness by 22 percent over two years.",0,1,1,0,0
+"Governor Esme Carradine vetoed a bill that would have expanded ICE access to state driver's license databases.",1,0,1,0,0
+"Senator Quinn Whitfield co-sponsored legislation funding the construction of 12 new federal courthouses nationwide.",0,0,1,0,0
+"Representative Beatriz Castellanos voted to extend Temporary Protected Status for Central American countries through 2027.",1,0,0,0,0
+"AG Aida Gallagher announced a settlement with three for-profit colleges totaling $128 million in student debt relief.",0,0,1,1,1
+"Lieutenant Governor Solange Ardoin announced a state initiative providing free tax preparation services in 84 counties.",0,0,0,1,0
+"State Representative Phoebe Carlisle voted against a bill that would have privatized state public defender services.",0,0,1,0,0
+"Mayor Naima Diop announced that the city would expand its second-chance hiring program to all municipal departments.",0,0,1,1,0
+"Governor Lior Aviram signed legislation expanding mental health insurance parity requirements for state-regulated plans.",0,1,0,0,0
+"Senator Haley Westerlund introduced a bill creating federal grants for evidence-based teacher mentoring programs.",0,0,0,0,1
+"Representative Ximena Aldana voted to expand the federal Workforce Innovation and Opportunity Act funding by 18 percent.",0,0,0,1,1
+"AG Constance Whitehorse filed federal civil rights charges against three deputies in a custody death investigation.",0,0,1,0,0
+"Mayor Sumaya Hassan announced a citywide expansion of community health workers serving immigrant neighborhoods.",1,1,0,0,0
+"State Senator Briallen Pritchard voted against a measure that would have eliminated state-funded preschool slots.",0,0,0,1,1
+"Governor Frieda Halverson signed legislation funding 1,400 new affordable housing units in three urban centers.",0,0,0,1,0

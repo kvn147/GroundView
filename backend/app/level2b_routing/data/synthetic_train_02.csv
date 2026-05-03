@@ -1,0 +1,78 @@
+# Constraint: H (cross-topic — all rows multi-label, ≥2 topics)
+claim_text,immigration,healthcare,crime,economy,education
+"Senator Singh's bill ties Medicaid expansion eligibility to enrollment in approved workforce training programs.",0,1,0,1,1
+"Representative Park introduced legislation linking ICE detention funding to local jail recidivism rates.",1,0,1,0,0
+"Governor Weaver vetoed a measure that would have funded school police with proceeds from a sales tax increase.",0,0,1,1,1
+"AG Larsen filed suit against three pharmaceutical companies over fentanyl precursor sales near border crossings.",1,1,1,0,0
+"Mayor Diaz-Romero announced that public hospitals would screen all patients for immigration-related stress at intake.",1,1,0,0,0
+"Senator Tanaka's manufacturing bill would prioritize federal contracts to firms that hire formerly incarcerated workers.",0,0,1,1,0
+"Representative Whitfield voted against tying community college tuition aid to in-state residency for undocumented students.",1,0,0,1,1
+"Governor Abara signed legislation expanding behavioral health coverage for veterans returning from federal detention facilities.",1,1,0,0,0
+"Mayor Holloway proposed funding youth violence interruption programs through a tax on high-frequency stock trading.",0,0,1,1,0
+"AG Kowalski announced indictments against 14 unlicensed pharmacies operating near university campuses in three states.",0,1,1,0,1
+"Senator Singh co-sponsored a bill expanding Pell grants to incarcerated students pursuing GEDs in federal prisons.",0,0,1,1,1
+"Representative Park's proposal would condition federal hospital funding on language access for non-English-speaking patients.",1,1,0,0,0
+"Governor Weaver expanded Medicaid telehealth to cover mental health visits for K-12 teachers in rural districts.",0,1,0,0,1
+"AG Larsen's office charged 22 individuals in a healthcare fraud scheme that targeted Medicaid in three Midwest counties.",0,1,1,0,0
+"Mayor Diaz-Romero announced a pilot pairing affordable housing vouchers with employment counseling for recently released residents.",0,0,1,1,0
+"Senator Tanaka voted against an amendment that would have eliminated federal grants for school resource officers.",0,0,1,1,1
+"Representative Whitfield introduced a bill creating tax credits for employers who hire individuals with criminal records.",0,0,1,1,0
+"Governor Abara's economic development proposal includes wage subsidies for hospitals serving high-immigrant counties.",1,1,0,1,0
+"Mayor Holloway announced that the city would offer free community college tuition to children of frontline healthcare workers.",0,1,0,0,1
+"AG Kowalski filed civil rights suits against three school districts over disciplinary disparities affecting English learners.",1,0,1,0,1
+"Senator Singh's housing affordability bill includes provisions for emergency shelter funding tied to mental health services.",0,1,0,1,0
+"Representative Park voted to expand the child tax credit and pair it with universal pre-K eligibility.",0,0,0,1,1
+"Governor Weaver signed legislation tying state university funding to graduation rates for Pell-eligible students.",0,0,0,1,1
+"AG Larsen announced settlements with three for-profit colleges that targeted veterans with predatory loan products.",0,0,1,1,1
+"Mayor Diaz-Romero's gun violence reduction plan includes funding for hospital-based intervention programs in three trauma centers.",0,1,1,0,0
+"Senator Tanaka voted against a balanced-budget amendment that critics said would force Medicaid cuts.",0,1,0,1,0
+"Representative Whitfield introduced legislation extending the federal earned income tax credit to undocumented filers.",1,0,0,1,0
+"Governor Abara's prescription drug bill caps insulin copays for state employees and Medicaid beneficiaries simultaneously.",0,1,0,1,0
+"Mayor Holloway proposed funding additional school counselors through a tax on luxury real estate transactions.",0,1,0,1,1
+"AG Kowalski's office investigated wage theft complaints from immigrant workers at three meatpacking facilities.",1,0,1,1,0
+"Senator Singh co-sponsored legislation linking federal infrastructure grants to apprenticeship slots for high school graduates.",0,0,0,1,1
+"Representative Park voted against expanding 287(g) immigration enforcement agreements with county sheriff's offices.",1,0,1,0,0
+"Governor Weaver expanded a state-funded scholarship program to undocumented students enrolled in nursing programs.",1,1,0,0,1
+"AG Larsen filed antitrust complaints against three hospital systems for anti-competitive practices in border communities.",1,1,0,1,0
+"Mayor Diaz-Romero announced a $48 million investment in trauma-informed care training for school staff.",0,1,0,0,1
+"Senator Tanaka's bill would require background checks for purchasers at all federally licensed firearms dealers.",0,0,1,0,0
+"Representative Whitfield voted to expand veterans' education benefits to cover apprenticeships in healthcare occupations.",0,1,0,0,1
+"Governor Abara signed legislation funding a permanent supportive housing program for individuals exiting state prisons.",0,0,1,1,0
+"Mayor Holloway proposed a workforce development partnership between local employers and incarcerated individuals near release.",0,0,1,1,1
+"AG Kowalski announced charges against four health insurers for improperly denying mental health claims in three states.",0,1,1,0,0
+"Senator Singh introduced legislation creating a federal grant program for school-based health clinics in rural counties.",0,1,0,0,1
+"Representative Park's higher education affordability bill includes funding for childcare on community college campuses.",0,0,0,1,1
+"Governor Weaver vetoed a bill that would have eliminated state subsidies for hospitals serving Medicare beneficiaries.",0,1,0,1,0
+"AG Larsen filed amicus briefs in three federal cases challenging the criminalization of homelessness in border cities.",1,0,1,0,0
+"Mayor Diaz-Romero announced that the city would partner with the local university on a public health workforce pipeline.",0,1,0,1,1
+"Senator Tanaka voted to extend Temporary Protected Status for individuals from countries with active climate emergencies.",1,0,0,1,0
+"Representative Whitfield co-sponsored legislation expanding tax credits for businesses hiring veterans into manufacturing apprenticeships.",0,0,0,1,1
+"Governor Abara's budget proposal includes funding for substance use disorder treatment in 14 county jails.",0,1,1,0,0
+"Mayor Holloway proposed a citywide bond to fund both school facility upgrades and after-school violence prevention programs.",0,0,1,1,1
+"AG Kowalski's office secured $84 million in restitution for low-income borrowers victimized by predatory lenders.",0,0,1,1,0
+"Senator Singh introduced legislation linking federal anti-recidivism grants to job training partnerships with local employers.",0,0,1,1,0
+"Representative Park voted against rolling back federal nutrition standards for free and reduced-price school meals.",0,1,0,0,1
+"Governor Weaver expanded a state pilot pairing newly arrived refugees with local healthcare apprenticeship programs.",1,1,0,1,1
+"AG Larsen announced a settlement requiring three opioid distributors to fund treatment beds in Appalachian counties.",0,1,1,0,0
+"Mayor Diaz-Romero's economic development plan includes English-language workforce training tied to construction trade unions.",1,0,0,1,1
+"Senator Tanaka voted to advance legislation that would expand Medicaid asset-recovery limits and fund rural hospitals.",0,1,0,1,0
+"Representative Whitfield's higher education bill ties student loan repayment caps to public service employment.",0,0,0,1,1
+"Governor Abara expanded mental health crisis response teams to include a cultural liaison for immigrant communities.",1,1,0,0,0
+"Mayor Holloway announced that the city would tie hotel occupancy tax revenue to homeless services and youth education programs.",0,0,0,1,1
+"AG Kowalski filed criminal charges against two hospital executives for Medicare fraud schemes in the upper Midwest.",0,1,1,0,0
+"Senator Singh co-sponsored a bill creating a national clearinghouse for prescription drug pricing data.",0,1,0,1,0
+"Representative Park introduced legislation that would expand workforce visas in healthcare and education sectors simultaneously.",1,1,0,1,1
+"Governor Weaver signed a bipartisan bill that ties expanded behavioral health coverage to school-based services.",0,1,0,0,1
+"AG Larsen's office secured $240 million in restitution from a healthcare fraud scheme targeting elderly Medicare beneficiaries.",0,1,1,0,0
+"Mayor Diaz-Romero's affordable housing bond would fund both family shelters and mental health crisis stabilization units.",0,1,0,1,0
+"Senator Tanaka voted against a measure that would have privatized Medicaid managed care in his state.",0,1,0,1,0
+"Representative Whitfield introduced legislation requiring colleges to disclose campus crime data alongside graduation rates.",0,0,1,0,1
+"Governor Abara signed a bill establishing a state office to coordinate immigrant integration and workforce placement.",1,0,0,1,1
+"Mayor Holloway proposed funding youth diversion programs through a fee on payday lenders operating near schools.",0,0,1,1,1
+"AG Kowalski announced indictments in a wage theft scheme that affected 1,400 immigrant agricultural workers.",1,0,1,1,0
+"Senator Singh introduced a bill creating tax credits for hospitals that provide free care to uninsured patients.",0,1,0,1,0
+"Representative Park's gun safety bill would expand background checks and fund mental health crisis services.",0,1,1,0,0
+"Governor Weaver expanded Medicaid coverage to include doula services for low-income mothers in rural counties.",0,1,0,1,0
+"AG Larsen filed civil rights suits against three jails for failing to provide adequate mental health care.",0,1,1,0,0
+"Mayor Diaz-Romero announced a citywide initiative pairing newly arrived migrants with employment in healthcare support roles.",1,1,0,1,0
+"Senator Tanaka voted to expand the federal Workforce Innovation and Opportunity Act to include incarcerated individuals.",0,0,1,1,1
