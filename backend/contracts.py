@@ -318,9 +318,15 @@ class FrontendOpinionLean(BaseModel):
 class FrontendOpinion(BaseModel):
     """Chrome-extension shape for one opinion statement."""
 
+    # Field names mirror ``FrontendClaim`` (camelCase ``startTime`` /
+    # ``endTime``) so the chrome extension's ``normalizeAnalysisItem``
+    # reads timestamps the same way for both kinds. Earlier shape used
+    # ``start_time`` and dropped ``end_time`` entirely, which silently
+    # broke the timestamp button on opinion rows.
     statement: str
     raw_quote: str
-    start_time: float
+    startTime: Optional[float] = None
+    endTime: Optional[float] = None
     lean: FrontendOpinionLean
     evidence: list[FrontendOpinionEvidence] = Field(default_factory=list)
     activity: Optional[FrontendActivity] = None

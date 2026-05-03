@@ -36,6 +36,13 @@ clips/videos/
 backend/eval/reports/
 *.cache
 
+# SQLite runtime cache — clip_fact_checks.db is a per-process artifact
+# that mutates every time the backend runs; the WAL/SHM sidecars churn
+# even faster. Tracking them produces noisy diffs and merge conflicts.
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
+
 # Level 2b routing — combined_train.csv is committed (the data is
 # the durable artifact). model.pkl is NOT committed because git over
 # HTTPS chokes on the 32 MB pickle. Every contributor trains locally

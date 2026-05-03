@@ -179,7 +179,8 @@ def _opinion_to_frontend(annotation: OpinionAnnotation) -> FrontendOpinion:
     return FrontendOpinion(
         statement=annotation.opinion.statement,
         raw_quote=annotation.opinion.raw_quote,
-        start_time=annotation.opinion.start_time,
+        startTime=annotation.opinion.start_time,
+        endTime=annotation.opinion.end_time,
         lean=FrontendOpinionLean(
             value=annotation.lean_value,
             label=annotation.lean_label,

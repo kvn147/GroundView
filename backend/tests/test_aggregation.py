@@ -278,7 +278,8 @@ class TestAggregateTopLevel:
         )
         r = aggregate([], [op])
         assert r.opinions[0].statement == "Taxes are too high"
-        assert r.opinions[0].start_time == 10.0
+        assert r.opinions[0].startTime == 10.0
+        assert r.opinions[0].endTime == 15.0
 
     def test_political_lean_value_in_range(self):
         for b in [-1.0, -0.5, 0.0, 0.5, 1.0]:

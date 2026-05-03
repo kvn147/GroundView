@@ -121,9 +121,14 @@
     const sourceList = Array.isArray(item?.sources) ? item.sources.map(normalizeSource).filter(Boolean) : [];
     const evidenceList = normalizeEvidence(item?.evidence);
     const lean = kind === "opinion" ? normalizeLean(item?.lean) : null;
+    // Fact-claim shapes use `text` or `claim`; opinion shapes use `statement`.
+    // Without the `statement` fallback, every opinion is dropped because the
+    // section renderer filters out items with empty text.
     const text = typeof item?.text === "string" && item.text.trim()
       ? item.text.trim()
-      : (typeof item?.claim === "string" ? item.claim.trim() : "");
+      : (typeof item?.claim === "string" && item.claim.trim()
+          ? item.claim.trim()
+          : (typeof item?.statement === "string" ? item.statement.trim() : ""));
     const explanation = typeof item?.explanation === "string" && item.explanation.trim()
       ? item.explanation.trim()
       : (typeof item?.summary === "string" ? item.summary.trim() : "");
