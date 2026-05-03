@@ -27,11 +27,12 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.agents.aggregator import aggregate_annotations
 from backend.agents.judge import calculate_confidence_structured
 from backend.agents.orchestrator import AgentOrchestrator
+from backend.clip_store import get_clip, list_clips, publish_clip, set_vote
 from backend.app.level2b_routing.router import route as l2b_route
 from backend.contracts import (
     AnalyzeClipResponse,
@@ -94,6 +95,22 @@ class TranscriptUploadResponse(BaseModel):
     transcriptId: str
     chunkCount: int
     totalCharacters: int
+
+
+class PublishClipRequest(BaseModel):
+    videoUrl: str
+    startTime: float
+    endTime: float
+    claim: str = ""
+    verdict: str = "Pending"
+    explanation: str = ""
+    sources: list[FrontendSource] = Field(default_factory=list)
+    sessionId: str
+
+
+class VoteClipRequest(BaseModel):
+    sessionId: str
+    vote: int = Field(..., ge=-1, le=1)
 
 
 def _utc_now() -> str:
@@ -330,6 +347,45 @@ async def inspect_transcript(transcript_id: str):
         "preview": first_chunk[:240],
         "createdAt": record["createdAt"],
     }
+
+
+@api_router.post("/published-clips")
+async def create_published_clip(req: PublishClipRequest):
+    clip = publish_clip(
+        video_url=req.videoUrl,
+        start_time=req.startTime,
+        end_time=req.endTime,
+        claim=req.claim,
+        verdict=req.verdict,
+        explanation=req.explanation,
+        sources=[source.model_dump() for source in req.sources],
+        session_id=req.sessionId,
+    )
+    return clip
+
+
+@api_router.get("/published-clips")
+async def get_published_clips(
+    url: str = Query(...),
+    sessionId: str | None = Query(None),
+):
+    return list_clips(url, session_id=sessionId)
+
+
+@api_router.post("/published-clips/{clip_id}/vote")
+async def vote_on_published_clip(clip_id: int, req: VoteClipRequest):
+    try:
+        return set_vote(clip_id, req.sessionId, req.vote)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@api_router.get("/published-clips/{clip_id}")
+async def get_published_clip(clip_id: int, sessionId: str | None = Query(None)):
+    try:
+        return get_clip(clip_id, session_id=sessionId)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 def _confidence_state_from_score(final_score: float) -> ConfidenceState:

@@ -205,6 +205,21 @@
   color: #ef5350;
 }
 
+.ytfc-opinion-left {
+  background: rgba(74, 144, 217, 0.18);
+  color: #8fc3ff;
+}
+
+.ytfc-opinion-center {
+  background: rgba(255, 193, 7, 0.18);
+  color: #ffd466;
+}
+
+.ytfc-opinion-right {
+  background: rgba(217, 74, 74, 0.18);
+  color: #ff9b9b;
+}
+
 .ytfc-claim-detail {
   display: none;
   margin-top: 10px;
@@ -258,6 +273,88 @@
   background: rgba(62, 166, 255, 0.2);
 }
 
+.ytfc-detail-subheader {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8b8b8b;
+  text-transform: uppercase;
+  margin: 10px 0 6px;
+}
+
+.ytfc-activity-group {
+  margin-top: 10px;
+}
+
+.ytfc-activity-list,
+.ytfc-evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ytfc-activity-row,
+.ytfc-evidence-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.ytfc-activity-top,
+.ytfc-evidence-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ytfc-activity-agent,
+.ytfc-evidence-source {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+
+.ytfc-activity-meta {
+  font-size: 11px;
+  color: #8fb9d6;
+}
+
+.ytfc-activity-line,
+.ytfc-evidence-snippet {
+  font-size: 12px;
+  color: #a8a8a8;
+}
+
+.ytfc-activity-error {
+  color: #ef9a9a;
+}
+
+.ytfc-evidence-stance {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.ytfc-evidence-agree {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+
+.ytfc-evidence-disagree {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ef9a9a;
+}
+
+.ytfc-evidence-unverifiable {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bdbdbd;
+}
+
 /* Aggregated sources */
 .ytfc-sources-grid {
   display: flex;
@@ -278,6 +375,11 @@
 
 .ytfc-source-chip:hover {
   background: rgba(62, 166, 255, 0.18);
+}
+
+.ytfc-source-chip-static {
+  color: #9fcce9;
+  cursor: default;
 }
 
 /* ---------- Player Record Button ---------- */
@@ -466,6 +568,12 @@
   flex-shrink: 0;
 }
 
+.ytfc-clip-sidebar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .ytfc-clip-sidebar-title {
   font-size: 15px;
   font-weight: 600;
@@ -477,6 +585,16 @@
   background: #2a2a2a;
   padding: 2px 8px;
   border-radius: 10px;
+}
+
+.ytfc-board-link {
+  font-size: 12px;
+  color: #7cc8ff;
+  text-decoration: none;
+  background: rgba(62, 166, 255, 0.12);
+  border: 1px solid rgba(62, 166, 255, 0.18);
+  padding: 6px 10px;
+  border-radius: 999px;
 }
 
 .ytfc-clip-list {
@@ -555,6 +673,40 @@
 
 .ytfc-clip-sources a:hover {
   text-decoration: underline;
+}
+
+.ytfc-clip-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.ytfc-clip-publish-btn {
+  border: 0;
+  border-radius: 999px;
+  background: #3ea6ff;
+  color: #08111a;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.ytfc-clip-publish-btn[disabled] {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.ytfc-clip-publish-meta {
+  font-size: 11px;
+  color: #8fb9d6;
+}
+
+.ytfc-clip-publish-error {
+  font-size: 11px;
+  color: #ef9a9a;
 }
 
 .ytfc-clip-empty {

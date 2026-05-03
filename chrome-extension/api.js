@@ -3,6 +3,26 @@
 // =============================================================================
 
 const API_BASE_URL = "http://localhost:8000/api";
+const YTFC_SESSION_KEY = "ytfc-publisher-session-id";
+const YTFC_BOARD_URL = "http://localhost:8000/clips";
+
+function API_getSessionId() {
+  const existing = window.localStorage.getItem(YTFC_SESSION_KEY);
+  if (existing) return existing;
+  const created = globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : `sess-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  window.localStorage.setItem(YTFC_SESSION_KEY, created);
+  return created;
+}
+
+function API_getBoardUrl(videoUrl = "") {
+  const query = new URLSearchParams({ session: API_getSessionId() });
+  if (videoUrl) {
+    query.set("url", videoUrl);
+  }
+  return `${YTFC_BOARD_URL}?${query.toString()}`;
+}
 
 /**
  * Checks if a video is political based on its metadata.
@@ -88,8 +108,9 @@ async function API_getFullAnalysis(videoUrl, transcript = null, transcriptId = n
       trustworthinessScore: 1,
       maxScore: 5,
       trustworthinessLabel: "Error",
-      politicalLean: { label: "Unknown", value: 0.5 },
+      politicalLean: { label: "Unknown", value: 0 },
       claims: [],
+      opinions: [],
       aggregatedSources: []
     };
   }
@@ -128,3 +149,30 @@ async function API_analyzeClip(videoUrl, startTime, endTime, transcriptId = null
   }
 }
 
+/**
+ * Publishes a locally analyzed clip to the shared SQLite-backed clip board.
+ * Endpoint: POST /api/published-clips
+ */
+async function API_publishClip(videoUrl, clip) {
+  console.log("[API] publishClip called:", { videoUrl, startTime: clip.startTime, endTime: clip.endTime });
+  const payload = {
+    videoUrl,
+    startTime: clip.startTime,
+    endTime: clip.endTime,
+    claim: clip.claim || "",
+    verdict: clip.verdict || "Pending",
+    explanation: clip.explanation || "",
+    sources: Array.isArray(clip.sources) ? clip.sources : [],
+    sessionId: API_getSessionId()
+  };
+  const response = await fetch(`${API_BASE_URL}/published-clips`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${body}`);
+  }
+  return response.json();
+}
