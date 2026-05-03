@@ -245,7 +245,7 @@
     addClipLoading();
 
     const videoUrl = window.location.href;
-    const result = await MOCK_analyzeClip(videoUrl, recordStartTime, endTime);
+    const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
 
     removeClipLoading();
     clipResults.unshift(result);
@@ -357,7 +357,7 @@
     // Step 1: Check if political
     injectLoadingCard();
 
-    const politicalCheck = await MOCK_checkIfPolitical({ title, description, tags });
+    const politicalCheck = await API_checkIfPolitical({ title, description, tags });
 
     if (!politicalCheck.isPolitical) {
       document.querySelectorAll(".ytfc-loading-card").forEach((el) => el.remove());
@@ -366,7 +366,7 @@
     }
 
     // Step 2: Full analysis
-    const analysis = await MOCK_getFullAnalysis(window.location.href);
+    const analysis = await API_getFullAnalysis(window.location.href);
     injectFactCheckCard(analysis);
 
     // Step 3: Inject record button & sidebar
