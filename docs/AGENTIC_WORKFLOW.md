@@ -1,146 +1,163 @@
 # AGENTIC_WORKFLOW.md — Target Architecture
 
-**Status:** North-star design. Doesn't change unless the team explicitly revises it.
+**Status:** Reflects the team's current design after the Chrome-extension pivot. Updated when the team explicitly revises it.
 **Companion doc:** [`STRUCTURE.md`](./STRUCTURE.md) describes what's actually on disk now. The gap between this doc and STRUCTURE.md is the work backlog.
 
 ---
 
-## Framing discipline (non-negotiable)
+## Framing
 
-The system **never renders its own verdicts.** It aggregates citations from existing reputable sources (PolitiFact, ProPublica) and lets the user click through. **Every output is attribution, never adjudication.**
+The system surfaces fact-check verdicts on political claims made in YouTube videos, in real time, directly inside the YouTube watch page. Each verdict is paired with a plain-English explanation and named, clickable source links so users can verify for themselves.
 
-This framing defuses bias attacks and is the project's identity. Do not drift from it during development.
+**Trust comes from transparency, not from refusing to render verdicts.** Users see the verdict, the reasoning, and the sources behind it. The system prefers established universal fact-checkers (PolitiFact, FactCheck.org, Snopes, AP, Reuters, Washington Post) when those organizations have already covered a claim, and falls back to domain-specific evidence retrieval when they have not.
+
+This is a deliberate change from the earlier "attribution, never adjudication" framing. The team chose verdict-rendering because (1) the Chrome-extension surface needs an at-a-glance signal users can read in real time, (2) the universal-fact-checker tier provides external grounding for verdicts, and (3) explanations + source links preserve user agency to disagree.
 
 ---
 
-## Pipeline — six levels
+## Pipeline
 
-### Level 0 — Ingestion (no model)
-- Pre-downloaded video + caption files (VTT/SRT).
-- Manifest-driven clip library: `{id, title, year, speakers, video_path, caption_path}`.
+### Level 0 — Ingestion (Chrome extension)
+- Extension activates on any `youtube.com/watch` URL.
+- Extracts page metadata: title, description, meta keywords/tags.
+- Listens for SPA navigations (YouTube does not full-reload between videos).
 
-### Level 1 — Caption Parsing (no model)
-- Parse VTT/SRT into segments: `[{speaker, text, start_time, end_time}, ...]`.
-- Group consecutive segments into claim-bearing windows (~30–60s with overlap).
-- Captions are ground truth. **No transcription model in the pipeline.**
+### Level 1 — Political gating (lightweight LLM)
+- Before any expensive work, the extension calls the backend with the video's metadata: "is this a political video?"
+- Endpoint: `POST /api/check-political` → `{ isPolitical: boolean }`.
+- Non-political videos exit the pipeline here. No fact-check UI is injected.
 
-### Level 2a — Claim Extraction (frontier model)
-- Claude Sonnet via OpenRouter, structured output, strict verifiability filter.
-- Output: typed `Claim` objects with topics, timestamps, speaker.
+### Level 2 — Claim extraction (frontier model)
+- For political videos, the backend extracts factual claims from available text (captions, description, transcript when available).
+- Strict verifiability filter: only specific, falsifiable assertions. No opinion, no rhetoric, no future predictions.
 
-### Level 2b — Topic Routing (hybrid)
-- Keyword tables first (deterministic), Haiku fallback for ambiguous cases.
-- Multi-label allowed.
-- Out-of-scope claims (no topic match, no LLM rescue) flow to `insufficient_coverage` rather than being force-routed.
+### Level 3 — Topic routing
+- Each claim is routed to one or more domain agents based on topic.
+- **Topics on disk:** `immigration`, `healthcare`, `crime`, `economy`, `education`.
+- Hybrid routing: keyword tables for fast deterministic matches, small classifier or LLM fallback for ambiguous cases. Multi-label routing is allowed.
+- Out-of-scope claims (no topic match) skip Level 4 and are surfaced with no verdict, or dropped, depending on UI policy.
 
-### Level 3 — Topic Agents (cheap LLM + embeddings)
-- 4 agents, each with hard-coded `ALLOWED_SOURCES` frozenset.
-- Per-agent: small-LLM query construction + embedding similarity matching.
-- **Permission enforcement at agent boundary** — agent raises `PermissionError` if asked to query a source outside its allowlist. This is the ConductorOne thesis as code; keep it visible and uncompromising.
+### Level 4 — Evidence retrieval (per claim)
+Each claim hits two tiers in order:
 
-The four agents:
+**Tier A — Universal fact-checker override.** The agent first asks an LLM whether the claim has been *explicitly* fact-checked by PolitiFact, FactCheck.org, Snopes, AP Fact Check, Reuters Fact Check, or Washington Post Fact Checker. If yes, the agent returns that fact-checker's verdict and reasoning. If no, the agent returns the literal string `NO_FACT_CHECK_FOUND` and Tier B runs.
 
-| Agent                       | Allowed sources                            |
-| --------------------------- | ------------------------------------------ |
-| `LegislativeAgent`          | ProPublica Congress API                    |
-| `EconomyAgent`              | PolitiFact (economy-tagged subset)         |
-| `HistoricalStatementsAgent` | PolitiFact (prior-statements subset)       |
-| `PolicyOutcomeAgent`        | PolitiFact (policy-outcome subset)         |
+**Tier B — Domain agent retrieval.** Domain-specific LLM call retrieves evidence from the topic agent's source list (BLS, FRED, USCIS, FBI/UCR, NCES, etc.). Returns Markdown with synthesized facts, statistics, and named sources.
 
-### Level 4a — Aggregation (no model)
-- Collect verification results across agents, deduplicate, group by agent.
+### Level 5 — Verdict rendering (LLM)
+- The pipeline assembles per-claim verdicts: `True | Mostly True | Mixed | Mostly False | False`, plus a plain-English explanation and a list of named, clickable source links.
+- Per-video aggregates: a 1–5 trustworthiness score, a label (e.g., "Mixed Accuracy"), a political-lean estimate (0..1 with a label), a one-paragraph summary, and a deduplicated source list with citation counts.
+- **Verdicts are LLM-rendered, not rule-based.** This is a deliberate trade: the system gains flexibility and per-claim explanation quality at the cost of the inspectability that a rule-based classifier would have offered. The LLM is constrained by the universal-fact-checker tier and by the named sources retrieved in Level 4 — its verdict should be defensible against those sources.
 
-### Level 4b — Confidence Classification (**no model — RULES**)
-- Auditable Python rules. **Critical: never put an LLM here.**
-- This is the most bias-sensitive decision in the system; it must be inspectable.
-- Output states: `verified` / `contradicted` / `insufficient_coverage` / `sources_disagree`.
+### Level 6 — UI (Chrome extension content script)
+The extension injects three UI elements into the YouTube watch page:
+- **Fact-check card** under `#middle-row`: video summary, trustworthiness score, political-lean meter, expandable per-claim list, aggregated source chips.
+- **Record button** in the YouTube player controls (`.ytp-right-controls`): user marks a clip in/out and the extension fact-checks just that span.
+- **Clip sidebar** in `#secondary-inner`: timestamped clip results, click-to-seek on timestamps.
 
-### Level 5 — Rendering (no model)
-- React components, timeline-synced annotation cards.
+All extension state lives in the content script — no popup, no options page (currently).
 
-### Level 6 — Eval Harness (no model in critical path)
-- Batch runner against 5 ground-truth-annotated clips.
-- Three numbers: extraction accuracy, routing accuracy, citation relevance.
-- Aggressive caching by content hash.
+### Level 7 — Eval (TBD)
+- The original 5-clip hand-annotated eval harness is no longer the right shape (extension targets arbitrary YouTube videos, not a fixed clip set).
+- Replacement undecided. Likely candidates: (a) a fixed corpus of 20–50 hand-labeled real-world claims tested against the verdict pipeline; (b) regression tests on the universal-fact-checker tier where the expected verdict is known.
 
 ---
 
 ## Inter-level contracts
 
-These types are the API between levels. Changes require team agreement.
+These types are the API between extension and backend, and between backend levels.
 
 ```typescript
-// Level 1 output
-type CaptionSegment = {
-  speaker: string | null,       // from caption metadata if present
-  text: string,
-  start_time: number,           // seconds
-  end_time: number
+// Level 1 — Political gating
+type CheckPoliticalRequest = {
+  title: string,
+  description: string,
+  tags: string,
+  aiDescription?: string
 }
+type CheckPoliticalResponse = { isPolitical: boolean }
 
-// Level 2a output
+// Level 5 output — full video analysis
+type Verdict = "True" | "Mostly True" | "Mixed" | "Mostly False" | "False"
+
+type Source = { name: string, url: string }
+
 type Claim = {
-  claim_text: string,           // verbatim from caption
-  claim_type: "voting_record" | "statistic" | "prior_statement"
-            | "policy_outcome" | "biographical",
-  topics: string[],             // multi-label routing tags, lowercase snake_case canonical IDs
-  speaker: string,
-  start_time: number,
-  end_time: number,
-  verifiability: "structured_data" | "fact_checker_likely",
-  extraction_confidence: number
+  id: string,
+  text: string,
+  verdict: Verdict,
+  explanation: string,        // plain-English, references the sources
+  sources: Source[]
 }
 
-// Level 3 output (per agent)
-type VerificationResult = {
-  agent: string,                // "LegislativeAgent" etc.
-  allowed_sources: string[],    // for activity panel display
-  queried_sources: string[],
-  matched_record: object | null,
-  rating_or_value: string | null,
-  url: string | null,
-  date: string | null,
-  confidence: number,
-  cache_hit: boolean
+type PoliticalLean = { label: string, value: number }   // value in 0..1
+
+type VideoAnalysis = {
+  summary: string,
+  trustworthinessScore: number,                          // 1..5
+  maxScore: number,                                      // currently 5
+  trustworthinessLabel: string,                          // e.g. "Mixed Accuracy"
+  politicalLean: PoliticalLean,
+  claims: Claim[],
+  aggregatedSources: (Source & { citedCount: number })[]
 }
 
-// Level 5 input
-type Annotation = {
-  claim: Claim,
-  results: VerificationResult[],
-  confidence_state: "verified" | "contradicted"
-                  | "insufficient_coverage" | "sources_disagree"
+// Level 5 output — single-clip analysis (recorded by user)
+type ClipAnalysis = {
+  startTime: number,                                     // seconds
+  endTime: number,
+  claim: string,
+  verdict: Verdict,
+  explanation: string,
+  sources: Source[]
 }
 ```
 
 ---
 
-## MVP scope — locked
+## Backend endpoints (consumed by the extension)
+
+- `POST /api/check-political` — Level 1 gating.
+- `POST /api/analyze-video` — full video analysis. Body: `{ url: string }`. Returns `VideoAnalysis`.
+- `POST /api/analyze-clip` — single clip analysis. Body: `{ url: string, startTime: number, endTime: number, captions?: string }`. Returns `ClipAnalysis`.
+
+All three are currently mocked by `chrome-extension/mock.js`; real implementations are pending.
+
+---
+
+## MVP scope
 
 **Must-haves (the spine):**
-- Curated 5-clip library with VTT/SRT captions.
-- Caption ingestion and parsing.
-- Claim extraction with verifiability filter.
-- Hybrid topic router (keyword + LLM fallback) into 4 topics.
-- 4 topic agents with allowlist enforcement.
-- Rule-based confidence classifier.
-- Annotation sidebar UI synced to video timeline.
-- Agent activity panel showing allowlist, queried sources, cache status.
-- Eval harness on the 5 hand-annotated clips.
+- Chrome extension that activates on `youtube.com/watch`, handles SPA navigation, and recovers cleanly across video changes.
+- Political gating endpoint working on real metadata.
+- Per-video full-analysis endpoint returning the `VideoAnalysis` contract.
+- Per-clip clip-analysis endpoint returning the `ClipAnalysis` contract.
+- Universal-fact-checker tier (Tier A) implemented and demonstrably overriding verdicts when applicable.
+- 5 domain agents (`immigration` / `healthcare` / `crime` / `economy` / `education`) wired to retrieval.
+- Topic routing into the 5 domains.
+- Verdict + explanation + sources rendered inside the YouTube DOM.
+- Demo on a real political YouTube video, end to end.
 
 **Cut entirely (do not build, do not pitch):**
-- Live YouTube URL ingestion.
-- Audio transcription (Whisper, faster-whisper, etc.).
+- Pre-shipped 5-clip library with VTT/SRT (replaced by live YouTube interaction via the extension).
+- Audio transcription pipelines (Whisper, faster-whisper) — extension uses YouTube's existing captions/description text.
 - Speaker diarization.
-- Additional verification sources beyond ProPublica + PolitiFact (architecture is "extensible to these," nothing more).
-- Nemotron fine-tuning.
-- Browser extension.
-- True async streaming (use batch-per-chunk instead).
-- Animations, transitions, micro-interactions.
+- Verification sources outside the universal-fact-checker tier and the existing per-domain source lists.
+- Extension UI animations / transitions / micro-interactions.
+- True async streaming (batch-per-claim is fine).
+- React sidebar / standalone web app surface (extension is the only front end now).
 
 ---
 
 ## Caching invariant
 
-Same input must never hit an external API twice across the hackathon. Disk cache keyed by content hash, with the model string included in the key so a model swap correctly invalidates.
+Same input must never hit an external API twice across a session. Disk cache keyed by content hash, with the model string included in the key so a model swap correctly invalidates.
 
+---
+
+## Open team decisions (pull from these when picking work)
+
+- **Verdict labels.** The 5-label set (`True | Mostly True | Mixed | Mostly False | False`) comes from the mock and matches PolitiFact's coloring. Add `Insufficient Evidence` as a sixth label when Tier A returns `NO_FACT_CHECK_FOUND` *and* Tier B comes back empty? Currently undecided.
+- **Eval harness shape.** See Level 7. Needed before we can claim measurable accuracy.
+- **Latency targets.** "Real time" inside the YouTube watch page implies a budget. No target has been set; assume best-effort for now.
+- **Authentication / billing.** OpenRouter key is per-developer for now; production extension would need a server-side key with abuse mitigation. Out of scope for the demo.
