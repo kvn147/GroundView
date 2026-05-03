@@ -7,7 +7,7 @@
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],
-      "js": ["mock.js", "content.js"],
+      "js": ["api.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
