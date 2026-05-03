@@ -1,0 +1,95 @@
+News Source	Type	AllSides Bias Rating
+NPR (Online News)	News Media	Lean Left	
+NPR (Opinion) 	News Media	Lean Left	
+One America News Network (OAN)	News Media	Right	
+Paul Krugman	Author	Left	
+Politico	News Media	Lean Left	
+PolitiFact	Fact Check	Lean Left	
+ProPublica	News Media	Lean Left	
+RealClearPolitics	News Media	Lean Right	
+Reason	News Media	Center	
+Reuters	News Media	Center	
+Semafor	News Media	Lean Left	
+Slate	News Media	Left	
+Snopes	Fact Check	Lean Left	
+Straight Arrow News	News Media	Center	
+The American Conservative	News Media	Right	
+The American Spectator	News Media	Right	
+The Atlantic	News Media	Left	
+The Daily Caller	News Media	Right	
+The Daily Wire	News Media	Right	
+The Dispatch	News Media	Lean Right	
+The Economist	News Media	Lean Left	
+The Epoch Times	News Media	Lean Right	
+The Federalist	News Media	Right	
+The Free Press	News Media	Lean Right	
+The Guardian	News Media	Left	
+The Hill	News Media	Center	
+The Intercept	News Media	Left	
+The Nation	News Media	Left	
+The New Yorker	News Media	Left	
+The Post Millennial	News Media	Right	
+Time Magazine	News Media	Lean Left	
+Upward News 	News Media	Lean Right	
+USA TODAY	News Media	Lean Left	
+Vox	News Media	Left	
+Wall Street Journal (News)	News Media	Center	
+Wall Street Journal (Opinion)	News Media	Lean Right	
+Washington Examiner	News Media	Lean Right	
+Washington Free Beacon	News Media	Right	
+Washington Post	News Media	Lean Left	
+Washington Times	News Media	Lean Right	
+Yahoo News	News Aggregator	Lean Left	
+ZeroHedge	News Media	Lean Right
+News Source	Type	AllSides Bias Rating
+ABC News (Online)	News Media	Lean Left	
+ACLU	Think Tank / Policy Group	Lean Left	
+AlterNet	News Media	Left	
+Andrew Sullivan	Author	Center	
+Ann Coulter	Author	Right	
+Associated Press	News Media	Left	
+Associated Press Fact Check	News Media	Lean Left	
+Axios	News Media	Lean Left	
+BBC Fact Check	Fact Check	Center	
+BBC News	News Media	Center	
+Ben Shapiro	Author	Right	
+Blaze Media	News Media	Right	
+Bloomberg	News Media	Lean Left	
+Breitbart News	News Media	Right	
+Business Insider	News Media	Lean Left	
+BuzzFeed News	News Media	Left	
+CBN	News Media	Right	
+CBS News (Online)	News Media	Lean Left	
+Christian Science Monitor	News Media	Center	
+CNBC	News Media	Lean Left	
+CNN Digital	News Media	Lean Left	
+CNN Fact Check	Fact Check	Left	
+Daily Beast	News Media	Left	
+Daily Mail	News Media	Lean Right	
+Democracy Now!	News Media	Left	
+Ezra Klein	Author	Left	
+FactCheck.org	Fact Check	Lean Left	
+Forbes	News Media	Center	
+Forgotten Fact Checks (National Review)	News Media	Right	
+Fox Business	News Media	Lean Right	
+Fox News (Opinion)	News Media	Right	
+Fox News Digital	News Media	Right	
+HuffPost	News Media	Left	
+Independent Journal Review	News Media	Right	
+Jacobin	News Media	Left	
+Just The News	News Media	Lean Right	
+MarketWatch	News Media	Center	
+Mother Jones	News Media	Left	
+MS NOW	News Media	Left	
+National Review (News)	News Media	Lean Right	
+National Review (Opinion)	News Media	Right	
+NBC News Digital	News Media	Lean Left	
+New York Post (News)	News Media	Lean Right	
+New York Post (Opinion)	News Media	Right	
+New York Times (News)	News Media	Lean Left	
+New York Times (Opinion)	News Media	Left	
+Newsmax (News)	News Media	Right	
+Newsmax (Opinion)	News Media	Right	
+NewsNation	News Media	Center	
+Newsweek	News Media	Center	
+
