@@ -4,12 +4,18 @@ The full pipeline that ``/analyze-video`` runs:
 
   L1  transcript fetch     — backend/core/transcript.py
   L2a claim extraction     — backend/core/extract.py (Haiku)
-  L2b topic routing        — backend/app/level2b_routing/router.py (local)
-  L3  agent fan-out        — backend/agents/orchestrator.py
-       └─ allowlist enforce — backend/agents/base.py (the moneyshot)
-  L4a aggregation          — backend/agents/aggregator.py (rules-only)
-  L4b confidence rules     — backend/agents/judge.py (calculate_confidence_structured)
-  L5  rendering            — backend/contracts.py shapes the response
+                             returns ExtractionResult{facts, opinions}
+  Fact track:
+    L2b topic routing      — backend/app/level2b_routing/router.py (local)
+    L3  agent fan-out      — backend/agents/orchestrator.py
+         └─ allowlist enforce — backend/agents/base.py (the moneyshot)
+    L4b confidence rules   — backend/agents/judge.calculate_confidence_structured
+  Opinion track:
+    L3  OpinionAgent       — backend/agents/agent_opinion.py
+                             allowlist from backend/data/media_bias.csv
+    L4b lean math          — backend/agents/judge.calculate_lean_structured
+  L5  rendering            — backend/core/aggregation.aggregate
+                             trust = facts only; lean = opinions only
 
 The route handler stays thin: it composes those modules and returns
 the ``AnalyzeVideoResponse`` shape the chrome extension expects.
@@ -29,8 +35,11 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from backend.agents.aggregator import aggregate_annotations
-from backend.agents.judge import calculate_confidence_structured
+from backend.agents.agent_opinion import get_opinion_agent
+from backend.agents.judge import (
+    calculate_confidence_structured,
+    calculate_lean_structured,
+)
 from backend.agents.orchestrator import AgentOrchestrator
 from backend.clip_store import get_clip, list_clips, publish_clip, set_vote
 from backend.app.level2b_routing.router import route as l2b_route
@@ -41,7 +50,11 @@ from backend.contracts import (
     Claim,
     ConfidenceState,
     FrontendSource,
+    Opinion,
+    OpinionAnnotation,
+    VerificationResult,
 )
+from backend.core.aggregation import aggregate
 from backend.core.extract import extract_claims
 from backend.core.transcript import (
     chunk_transcript_segments,
@@ -442,6 +455,59 @@ async def _annotation_for_claim(
     return annotation, judge_result, decision, fanout.results
 
 
+async def _annotation_for_opinion(
+    opinion_info: dict,
+    chunk_timestamp: float,
+    transcript_segments: list[dict],
+) -> tuple[OpinionAnnotation, VerificationResult]:
+    """Run the OpinionAgent + lean math, build an OpinionAnnotation.
+
+    No L2b routing (single-agent track). No fan-out (one agent). Returns
+    the annotation plus the raw VerificationResult so callers can emit
+    per-agent activity events if they wish.
+    """
+    opinion_text = opinion_info["statement"]
+    start_time, end_time = _claim_time_bounds(
+        # ``_claim_time_bounds`` keys off ``claim`` / ``raw_quote``; opinion
+        # extraction uses ``statement`` instead. Adapt the dict shape.
+        {
+            "claim": opinion_text,
+            "raw_quote": opinion_info.get("raw_quote", opinion_text),
+            "timestamp": opinion_info.get("timestamp", chunk_timestamp),
+        },
+        chunk_timestamp,
+        transcript_segments,
+    )
+
+    agent = get_opinion_agent()
+    result = await agent.verify(opinion_text)
+    lean = await calculate_lean_structured(opinion_text, result.evidence_items)
+
+    n_total = lean.get("n_total", 0)
+    n_contributing = lean.get("n_contributing", 0)
+    if n_total == 0:
+        reasoning = "No outlets took a verifiable stance."
+    else:
+        reasoning = (
+            f"{n_contributing} of {n_total} outlets took a verifiable stance."
+        )
+
+    annotation = OpinionAnnotation(
+        opinion=Opinion(
+            statement=opinion_text,
+            raw_quote=opinion_info.get("raw_quote", opinion_text),
+            start_time=start_time,
+            end_time=end_time,
+        ),
+        results=[result],
+        lean_value=lean.get("lean_value", 0.0),
+        lean_label=lean.get("lean_label", "Center / Neutral"),
+        reasoning=reasoning,
+        confidence=lean.get("confidence", 0.0),
+    )
+    return annotation, result
+
+
 def _clip_response_from_annotation(
     req: AnalyzeClipRequest,
     annotation: Annotation,
@@ -550,15 +616,17 @@ async def analyze_video_events(
     yield event
 
     annotations: list[Annotation] = []
+    opinion_annotations: list[OpinionAnnotation] = []
     claim_index = 0
+    opinion_index = 0
 
     for chunk in chunks:
         if request is not None and await request.is_disconnected():
             break
 
         extracted = await extract_claims(chunk["text"], chunk["timestamp"])
-        # NOTE: extracted.opinions is currently dropped here; opinion-pipeline
-        # wiring lands in the api/video.py integration commit.
+
+        # ----- fact pipeline -----
         for claim_info in extracted.facts:
             if request is not None and await request.is_disconnected():
                 break
@@ -625,7 +693,7 @@ async def analyze_video_events(
                 yield event
 
             annotations.append(annotation)
-            partial = aggregate_annotations(annotations)
+            partial = aggregate(annotations, opinion_annotations)
             frontend_claim = partial.claims[-1]
 
             event, seq = await _emit(
@@ -653,7 +721,89 @@ async def analyze_video_events(
             yield event
             claim_index += 1
 
-    response = aggregate_annotations(annotations)
+        # ----- opinion pipeline -----
+        for opinion_info in extracted.opinions:
+            if request is not None and await request.is_disconnected():
+                break
+            opinion_start_time, opinion_end_time = _claim_time_bounds(
+                {
+                    "claim": opinion_info["statement"],
+                    "raw_quote": opinion_info.get(
+                        "raw_quote", opinion_info["statement"]
+                    ),
+                    "timestamp": opinion_info.get(
+                        "timestamp", chunk["timestamp"]
+                    ),
+                },
+                chunk["timestamp"],
+                transcript_segments,
+            )
+
+            event, seq = await _emit(
+                "opinion_extracted",
+                run_id,
+                seq,
+                opinionIndex=opinion_index,
+                opinion={
+                    "statement": opinion_info["statement"],
+                    "raw_quote": opinion_info.get(
+                        "raw_quote", opinion_info["statement"]
+                    ),
+                    "start_time": opinion_start_time,
+                    "end_time": opinion_end_time,
+                },
+            )
+            yield event
+
+            try:
+                opinion_annotation, _opinion_result = await _annotation_for_opinion(
+                    opinion_info,
+                    chunk["timestamp"],
+                    transcript_segments,
+                )
+            except Exception as exc:
+                event, seq = await _emit(
+                    "error",
+                    run_id,
+                    seq,
+                    stage="opinion_resolved",
+                    message=str(exc),
+                    recoverable=True,
+                )
+                yield event
+                opinion_index += 1
+                continue
+
+            opinion_annotations.append(opinion_annotation)
+            partial = aggregate(annotations, opinion_annotations)
+            frontend_opinion = partial.opinions[-1]
+
+            event, seq = await _emit(
+                "opinion_resolved",
+                run_id,
+                seq,
+                opinionIndex=opinion_index,
+                opinion=frontend_opinion.model_dump(),
+            )
+            yield event
+
+            event, seq = await _emit(
+                "summary_updated",
+                run_id,
+                seq,
+                summary=partial.summary,
+                trustworthinessScore=partial.trustworthinessScore,
+                maxScore=partial.maxScore,
+                trustworthinessLabel=partial.trustworthinessLabel,
+                politicalLean=partial.politicalLean.model_dump(),
+                aggregatedSources=[
+                    source.model_dump() for source in partial.aggregatedSources
+                ],
+            )
+            yield event
+            opinion_index += 1
+
+    response = aggregate(annotations, opinion_annotations)
     event, _seq = await _emit(
         "done",
         run_id,
@@ -721,9 +871,9 @@ async def analyze_clip_events(
             break
 
     extracted = await extract_claims(selected["text"], selected["timestamp"])
-    # Clip path verifies the first FACT only. Opinions in the clip are
-    # currently ignored here; opinion-pipeline wiring lands in the
-    # integration commit.
+    # Clip path verifies the first FACT only. Opinion stance over a single
+    # short clip isn't a useful product (record-clip is for marking specific
+    # factual claims), so opinions in the clip are intentionally skipped.
     if not extracted.facts:
         response = _empty_clip_response(req)
         event, _seq = await _emit("done", run_id, seq, result=response.model_dump())
@@ -794,7 +944,7 @@ async def analyze_clip_events(
         )
         yield event
 
-    frontend_claim = aggregate_annotations([annotation]).claims[0]
+    frontend_claim = aggregate([annotation], []).claims[0]
     event, seq = await _emit(
         "claim_final",
         run_id,

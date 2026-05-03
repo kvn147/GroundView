@@ -250,3 +250,174 @@ async def test_analyze_video_claim_timestamps_match_underlying_segments(
     assert claim_final_events[0]["endTime"] == 5.0
     assert claim_final_events[1]["startTime"] == 19.0
     assert claim_final_events[1]["endTime"] == 19.0
+
+
+# ---------------------------------------------------------------------------
+# Opinion track — SSE event contract
+# ---------------------------------------------------------------------------
+
+
+class FakeOpinionAgent:
+    """Drop-in for ``OpinionAgent`` that returns a stance-evidence
+    ``VerificationResult`` without touching the LLM."""
+
+    def __init__(self, stance: str = "agree", outlet: str = "The Daily Wire") -> None:
+        self._stance = stance
+        self._outlet = outlet
+
+    async def verify(self, opinion_text: str) -> VerificationResult:
+        return VerificationResult(
+            agent="OpinionAgent",
+            claim_text=opinion_text,
+            allowed_sources=[self._outlet],
+            queried_sources=[self._outlet],
+            evidence_items=[
+                EvidenceItem(
+                    text=f"{self._outlet} {self._stance}s with the position.",
+                    source=Source(name=self._outlet, url=""),
+                    nli_source=None,
+                    stance=self._stance,
+                )
+            ],
+        )
+
+
+@pytest.fixture
+def mocked_pipeline_with_opinion(monkeypatch, mocked_pipeline):
+    """Extends ``mocked_pipeline`` with an opinion-emitting extractor and
+    a fake OpinionAgent. Builds on the same orchestrator/judge mocks."""
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return ExtractionResult(
+            facts=[],
+            opinions=[
+                {
+                    "statement": "We need stronger borders.",
+                    "raw_quote": "We need stronger borders.",
+                    "timestamp": timestamp,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+    monkeypatch.setattr(video, "get_opinion_agent", lambda: FakeOpinionAgent())
+
+
+@pytest.mark.asyncio
+async def test_opinion_emits_extracted_and_resolved_events(
+    mocked_pipeline_with_opinion,
+) -> None:
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    names = [event["event"] for event in events]
+
+    # The opinion path emits opinion_extracted, then opinion_resolved,
+    # then summary_updated.  No fact events because the fake extracted
+    # zero facts.
+    assert "opinion_extracted" in names
+    assert "opinion_resolved" in names
+
+    # Opinion events come AFTER transcript_ready and BEFORE done.
+    extracted_idx = names.index("opinion_extracted")
+    resolved_idx = names.index("opinion_resolved")
+    assert names.index("transcript_ready") < extracted_idx < resolved_idx
+    assert resolved_idx < names.index("done")
+
+
+@pytest.mark.asyncio
+async def test_opinion_resolved_payload_carries_lean_and_evidence(
+    mocked_pipeline_with_opinion,
+) -> None:
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    resolved = next(e for e in events if e["event"] == "opinion_resolved")
+    payload = resolved["payload"]["opinion"]
+
+    assert payload["statement"] == "We need stronger borders."
+    assert "lean" in payload
+    assert payload["lean"]["label"] in (
+        "Leans Left",
+        "Leans Right",
+        "Center / Neutral",
+    )
+    assert -1.0 <= payload["lean"]["value"] <= 1.0
+    # Evidence list mirrors the fake agent's stance evidence
+    assert len(payload["evidence"]) == 1
+    assert payload["evidence"][0]["outlet"] == "The Daily Wire"
+    assert payload["evidence"][0]["stance"] == "agree"
+
+
+@pytest.mark.asyncio
+async def test_done_response_contains_opinions_field(
+    mocked_pipeline_with_opinion,
+) -> None:
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    done = events[-1]
+    assert done["event"] == "done"
+    result = done["payload"]["result"]
+    assert "opinions" in result
+    assert len(result["opinions"]) == 1
+    assert result["opinions"][0]["statement"] == "We need stronger borders."
+    # Daily Wire is right-coded → agree → leans right
+    assert result["politicalLean"]["label"] == "Leans Right"
+
+
+@pytest.mark.asyncio
+async def test_facts_only_pipeline_yields_empty_opinions_field(
+    mocked_pipeline,
+) -> None:
+    """Regression: when no opinions are extracted, the opinions field
+    must still be present on the response (just empty)."""
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    done = events[-1]
+    assert done["event"] == "done"
+    result = done["payload"]["result"]
+    assert result["opinions"] == []
+    # politicalLean falls back to the "Unknown / 0.5" defaults when no
+    # opinions contribute (Kevin's aggregator behavior).
+    assert result["politicalLean"]["label"] == "Unknown"
+
+
+@pytest.mark.asyncio
+async def test_mixed_facts_and_opinions_both_render(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    """One chunk with one fact AND one opinion. Both pipelines fire,
+    both events emit, both end up in the final response."""
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return ExtractionResult(
+            facts=[
+                {
+                    "claim": "Inflation was 3 percent.",
+                    "raw_quote": "Inflation was 3 percent.",
+                    "timestamp": timestamp,
+                }
+            ],
+            opinions=[
+                {
+                    "statement": "We need stronger borders.",
+                    "raw_quote": "We need stronger borders.",
+                    "timestamp": timestamp,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+    monkeypatch.setattr(video, "get_opinion_agent", lambda: FakeOpinionAgent())
+
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    names = [event["event"] for event in events]
+
+    assert "claim_final" in names
+    assert "opinion_resolved" in names
+    # Fact events come before opinion events within the chunk
+    assert names.index("claim_final") < names.index("opinion_resolved")
+
+    done = events[-1]
+    result = done["payload"]["result"]
+    assert len(result["claims"]) == 1
+    assert len(result["opinions"]) == 1
+    # Trust score reflects the verified fact (final_score=0.8 → 5/5)
+    assert result["trustworthinessScore"] == 5
+    # Lean reflects the right-leaning opinion
+    assert result["politicalLean"]["label"] == "Leans Right"
