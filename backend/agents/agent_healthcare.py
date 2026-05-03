@@ -4,7 +4,7 @@ Healthcare Agent - Retrieves information for healthcare claims using OpenRouter.
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 # Load the environment variables from your .env file
 load_dotenv()
@@ -15,7 +15,7 @@ async def retrieve_evidence(claim: str) -> str:
     Returns the gathered information in Markdown.
     """
     # Initialize the OpenAI client pointing to OpenRouter
-    client = OpenAI(
+    client = AsyncOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.environ.get("OPENROUTER_API_KEY"),
     )
@@ -43,8 +43,8 @@ async def retrieve_evidence(claim: str) -> str:
         # Note: We use the synchronous client here, but wrap it in an async function 
         # so it remains compatible with the router.py expectations.
         # Alternatively, you could use AsyncOpenAI for true async execution.
-        response = client.chat.completions.create(
-            model="google/gemini-2.5-pro", # OpenRouter model name
+        response = await client.chat.completions.create(
+            model="google/gemini-2.5-flash", # OpenRouter model name
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}

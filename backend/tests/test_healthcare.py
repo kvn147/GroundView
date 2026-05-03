@@ -2,8 +2,8 @@ import asyncio
 import os
 import sys
 
-# Ensure the backend directory is in the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure the project root directory is in the path so we can import 'backend.xyz'
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 try:
     from dotenv import load_dotenv
