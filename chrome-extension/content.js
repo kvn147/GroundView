@@ -45,6 +45,259 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function normalizeLean(rawLean) {
+    const lean = rawLean && typeof rawLean === "object" ? rawLean : {};
+    const rawValue = Number.isFinite(lean.value) ? lean.value : 0;
+    const meterValue = (clamp(rawValue, -1, 1) + 1) / 2;
+    return {
+      label: typeof lean.label === "string" && lean.label.trim() ? lean.label : "Unknown",
+      value: rawValue,
+      meterValue
+    };
+  }
+
+  function normalizeSource(source) {
+    if (!source || typeof source !== "object") return null;
+    const name = typeof source.name === "string" ? source.name.trim() : "";
+    if (!name) return null;
+    return {
+      name,
+      url: typeof source.url === "string" ? source.url : ""
+    };
+  }
+
+  function normalizeActivity(activity) {
+    if (!Array.isArray(activity)) return [];
+    return activity
+      .filter((row) => row && typeof row === "object")
+      .map((row) => ({
+        agent: typeof row.agent === "string" ? row.agent : "Unknown agent",
+        queried_sources: Array.isArray(row.queried_sources) ? row.queried_sources.filter(Boolean) : [],
+        denied_sources: Array.isArray(row.denied_sources) ? row.denied_sources.filter(Boolean) : [],
+        allowed_sources: Array.isArray(row.allowed_sources) ? row.allowed_sources.filter(Boolean) : [],
+        cache_hit: !!row.cache_hit,
+        model_used: typeof row.model_used === "string" ? row.model_used : "",
+        duration_ms: Number.isFinite(row.duration_ms) ? row.duration_ms : 0,
+        error: typeof row.error === "string" && row.error.trim() ? row.error : ""
+      }));
+  }
+
+  function normalizeEvidence(evidence) {
+    if (!Array.isArray(evidence)) return [];
+    return evidence
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        source: typeof item.source === "string" ? item.source : (item.name || ""),
+        url: typeof item.url === "string" ? item.url : "",
+        stance: typeof item.stance === "string" ? item.stance : "unverifiable",
+        snippet: typeof item.snippet === "string"
+          ? item.snippet
+          : (typeof item.text === "string" ? item.text : "")
+      }))
+      .filter((item) => item.source);
+  }
+
+  function getOpinionBadge(lean) {
+    const value = Number.isFinite(lean?.value) ? lean.value : 0;
+    if (value < -0.2) return { label: "Leans Left", className: "ytfc-opinion-left" };
+    if (value > 0.2) return { label: "Leans Right", className: "ytfc-opinion-right" };
+    return { label: "Center / Mixed", className: "ytfc-opinion-center" };
+  }
+
+  function normalizeAnalysisItem(item, kind, index) {
+    const sourceList = Array.isArray(item?.sources) ? item.sources.map(normalizeSource).filter(Boolean) : [];
+    const evidenceList = normalizeEvidence(item?.evidence);
+    const lean = kind === "opinion" ? normalizeLean(item?.lean) : null;
+    const text = typeof item?.text === "string" && item.text.trim()
+      ? item.text.trim()
+      : (typeof item?.claim === "string" ? item.claim.trim() : "");
+    const explanation = typeof item?.explanation === "string" && item.explanation.trim()
+      ? item.explanation.trim()
+      : (typeof item?.summary === "string" ? item.summary.trim() : "");
+
+    return {
+      id: typeof item?.id === "string" ? item.id : `${kind}-${index + 1}`,
+      kind,
+      text,
+      explanation,
+      startTime: Number.isFinite(item?.startTime) ? item.startTime : null,
+      endTime: Number.isFinite(item?.endTime) ? item.endTime : null,
+      verdict: kind === "claim" ? (typeof item?.verdict === "string" ? item.verdict : "Unverified") : "",
+      lean,
+      sources: sourceList,
+      evidence: evidenceList,
+      activity: normalizeActivity(item?.activity)
+    };
+  }
+
+  function normalizeAnalysisData(data) {
+    const claims = Array.isArray(data?.claims)
+      ? data.claims.map((item, index) => normalizeAnalysisItem(item, "claim", index)).filter((item) => item.text)
+      : [];
+    const opinions = Array.isArray(data?.opinions)
+      ? data.opinions.map((item, index) => normalizeAnalysisItem(item, "opinion", index)).filter((item) => item.text)
+      : [];
+    const aggregatedSources = Array.isArray(data?.aggregatedSources)
+      ? data.aggregatedSources.map(normalizeSource).filter(Boolean)
+      : [];
+
+    return {
+      summary: typeof data?.summary === "string" ? data.summary : "",
+      trustworthinessScore: Number.isFinite(data?.trustworthinessScore) ? data.trustworthinessScore : 3,
+      maxScore: Number.isFinite(data?.maxScore) ? data.maxScore : 5,
+      trustworthinessLabel: typeof data?.trustworthinessLabel === "string" ? data.trustworthinessLabel : "Mixed Accuracy",
+      politicalLean: normalizeLean(data?.politicalLean),
+      claims,
+      opinions,
+      aggregatedSources
+    };
+  }
+
+  function buildTimestampMarkup(startTime, endTime) {
+    if (!Number.isFinite(startTime)) return "";
+    const safeEnd = Number.isFinite(endTime) ? endTime : startTime;
+    return `<div class="ytfc-claim-detail-meta">Timestamp: <button class="ytfc-claim-detail-timestamp" type="button" data-time="${startTime}" aria-label="Seek video to ${formatTime(startTime)}">${formatTime(startTime)}${safeEnd > startTime ? ` - ${formatTime(safeEnd)}` : ""}</button></div>`;
+  }
+
+  function buildSourcesMarkup(sources, className = "ytfc-claim-sources") {
+    if (!Array.isArray(sources) || sources.length === 0) return "";
+    return `
+      <div class="${className}">
+        ${sources.map((source) => {
+          const safeName = escapeHtml(source.name);
+          if (!source.url) return `<span class="ytfc-source-chip ytfc-source-chip-static">${safeName}</span>`;
+          const safeUrl = escapeHtml(source.url);
+          return `<a href="${safeUrl}" target="_blank" rel="noopener">${safeName}</a>`;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function buildEvidenceMarkup(evidence) {
+    if (!Array.isArray(evidence) || evidence.length === 0) return "";
+    return `
+      <div class="ytfc-activity-group">
+        <div class="ytfc-detail-subheader">Evidence</div>
+        <div class="ytfc-evidence-list">
+          ${evidence.map((item) => `
+            <div class="ytfc-evidence-row">
+              <div class="ytfc-evidence-top">
+                <span class="ytfc-evidence-source">${escapeHtml(item.source)}</span>
+                <span class="ytfc-evidence-stance ytfc-evidence-${escapeHtml(item.stance)}">${escapeHtml(item.stance)}</span>
+              </div>
+              ${item.snippet ? `<div class="ytfc-evidence-snippet">${escapeHtml(item.snippet)}</div>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildActivityMarkup(activity) {
+    if (!Array.isArray(activity) || activity.length === 0) return "";
+    return `
+      <div class="ytfc-activity-group">
+        <div class="ytfc-detail-subheader">Agent Activity</div>
+        <div class="ytfc-activity-list">
+          ${activity.map((row) => {
+            const meta = [];
+            if (row.model_used) meta.push(escapeHtml(row.model_used));
+            if (row.duration_ms > 0) meta.push(`${row.duration_ms}ms`);
+            if (row.cache_hit) meta.push("cache hit");
+            return `
+              <div class="ytfc-activity-row">
+                <div class="ytfc-activity-top">
+                  <span class="ytfc-activity-agent">${escapeHtml(row.agent)}</span>
+                  ${meta.length > 0 ? `<span class="ytfc-activity-meta">${meta.join(" · ")}</span>` : ""}
+                </div>
+                ${row.queried_sources.length > 0 ? `<div class="ytfc-activity-line">Queried: ${escapeHtml(row.queried_sources.join(", "))}</div>` : ""}
+                ${row.denied_sources.length > 0 ? `<div class="ytfc-activity-line">Denied: ${escapeHtml(row.denied_sources.join(", "))}</div>` : ""}
+                ${row.error ? `<div class="ytfc-activity-line ytfc-activity-error">Error: ${escapeHtml(row.error)}</div>` : ""}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildAnalysisItemMarkup(item) {
+    const badge = item.kind === "claim"
+      ? {
+          label: item.verdict,
+          className: `ytfc-verdict ${getVerdictClass(item.verdict)}`
+        }
+      : (() => {
+          const opinionBadge = getOpinionBadge(item.lean);
+          return {
+            label: opinionBadge.label,
+            className: `ytfc-verdict ${opinionBadge.className}`
+          };
+        })();
+
+    return `
+      <div class="ytfc-claim-top">
+        <div class="ytfc-claim-main">
+          <span class="ytfc-claim-text">${escapeHtml(item.text)}</span>
+        </div>
+        <span class="${badge.className}">${escapeHtml(badge.label)}</span>
+      </div>
+      <div class="ytfc-claim-detail">
+        ${buildTimestampMarkup(item.startTime, item.endTime)}
+        ${item.explanation ? `<div class="ytfc-claim-explanation">${escapeHtml(item.explanation)}</div>` : ""}
+        ${item.kind === "opinion" && item.lean ? `<div class="ytfc-claim-detail-meta">Lean: ${escapeHtml(item.lean.label)}</div>` : ""}
+        ${buildSourcesMarkup(item.sources)}
+        ${buildEvidenceMarkup(item.evidence)}
+        ${buildActivityMarkup(item.activity)}
+      </div>
+    `;
+  }
+
+  function appendAnalysisSection(card, title, items) {
+    const header = document.createElement("div");
+    header.className = "ytfc-section-header";
+    header.textContent = `${title} (${items.length})`;
+    card.appendChild(header);
+
+    const list = document.createElement("ul");
+    list.className = "ytfc-claims-list";
+
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = "ytfc-claim";
+      li.innerHTML = buildAnalysisItemMarkup(item);
+
+      li.addEventListener("click", () => {
+        li.classList.toggle("ytfc-expanded");
+      });
+
+      const detailTimestampButton = li.querySelector(".ytfc-claim-detail-timestamp");
+      if (detailTimestampButton) {
+        detailTimestampButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          seekVideoTo(parseFloat(detailTimestampButton.dataset.time));
+        });
+      }
+
+      list.appendChild(li);
+    });
+
+    card.appendChild(list);
+  }
+
   function isTranscriptPanelOpen() {
     return !!(
       document.querySelector("ytd-transcript-renderer") ||
@@ -375,6 +628,54 @@
     currentTranscriptSegments = [];
   }
 
+  function createClipLocalId() {
+    if (globalThis.crypto?.randomUUID) {
+      return globalThis.crypto.randomUUID();
+    }
+    return `clip-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function updateBoardLink() {
+    const boardLink = document.querySelector(".ytfc-board-link");
+    if (!boardLink) return;
+    boardLink.href = API_getBoardUrl(window.location.href);
+  }
+
+  async function publishClipResult(localId) {
+    const clip = clipResults.find((entry) => entry.localId === localId);
+    if (!clip || clip.publishState === "publishing" || clip.publishState === "published") return;
+
+    clip.publishState = "publishing";
+    clip.publishError = "";
+    renderClipSidebar();
+
+    try {
+      const published = await API_publishClip(window.location.href, clip);
+      clip.publishState = "published";
+      clip.publishError = "";
+      clip.publishedClipId = published.id;
+      clip.publishedAt = published.publishedAt;
+      clip.voteSummary = {
+        upvotes: published.upvotes,
+        downvotes: published.downvotes,
+        totalVotes: published.totalVotes
+      };
+      console.log("[FactChecker] Published clip:", published.id);
+    } catch (error) {
+      clip.publishState = "error";
+      clip.publishError = error.message || String(error);
+      console.error("[FactChecker] Publish clip failed:", error);
+    }
+
+    renderClipSidebar();
+  }
+
+  function getClipPublishLabel(clip) {
+    if (clip.publishState === "publishing") return "Publishing...";
+    if (clip.publishState === "published") return "Published";
+    return "Publish";
+  }
+
   function getActiveClaimsForTime(currentTime) {
     const claims = currentAnalysis?.claims || [];
     return claims
@@ -456,6 +757,7 @@
   // ── Fact-Check Card Builder ──
 
   function buildFactCheckCard(data) {
+    const analysis = normalizeAnalysisData(data);
     const card = document.createElement("div");
     card.className = "ytfc-card";
 
@@ -470,8 +772,8 @@
         </svg>
         Fact Check
       </div>
-      <span class="ytfc-score-badge ${getScoreClass(data.trustworthinessScore)}">
-        ${data.trustworthinessLabel} &mdash; ${data.trustworthinessScore}/${data.maxScore}
+      <span class="ytfc-score-badge ${getScoreClass(analysis.trustworthinessScore)}">
+        ${analysis.trustworthinessLabel} &mdash; ${analysis.trustworthinessScore}/${analysis.maxScore}
       </span>
     `;
     card.appendChild(header);
@@ -479,7 +781,7 @@
     // Summary
     const summary = document.createElement("div");
     summary.className = "ytfc-summary";
-    summary.textContent = data.summary;
+    summary.textContent = analysis.summary;
     card.appendChild(summary);
 
     // Political lean
@@ -488,65 +790,19 @@
     lean.innerHTML = `
       <div class="ytfc-lean-label">
         <span>Left</span>
-        <span>${data.politicalLean.label}</span>
+        <span>${analysis.politicalLean.label}</span>
         <span>Right</span>
       </div>
       <div class="ytfc-lean-bar">
-        <div class="ytfc-lean-marker" style="left: ${data.politicalLean.value * 100}%"></div>
+        <div class="ytfc-lean-marker" style="left: ${analysis.politicalLean.meterValue * 100}%"></div>
       </div>
     `;
     card.appendChild(lean);
 
-    // Claims section
-    const claimsHeader = document.createElement("div");
-    claimsHeader.className = "ytfc-section-header";
-    claimsHeader.textContent = `Claims (${data.claims.length})`;
-    card.appendChild(claimsHeader);
-
-    const claimsList = document.createElement("ul");
-    claimsList.className = "ytfc-claims-list";
-
-    data.claims.forEach((claim) => {
-      const li = document.createElement("li");
-      li.className = "ytfc-claim";
-      const claimStartTime = Number.isFinite(claim.startTime) ? claim.startTime : 0;
-      const claimEndTime = Number.isFinite(claim.endTime) ? claim.endTime : claimStartTime;
-      const hasTimestamp = Number.isFinite(claim.startTime);
-      const detailTimestampMarkup = hasTimestamp
-        ? `<div class="ytfc-claim-detail-meta">Timestamp: <button class="ytfc-claim-detail-timestamp" type="button" data-time="${claimStartTime}" aria-label="Seek video to ${formatTime(claimStartTime)}">${formatTime(claimStartTime)}${claimEndTime > claimStartTime ? ` - ${formatTime(claimEndTime)}` : ""}</button></div>`
-        : "";
-
-      li.innerHTML = `
-        <div class="ytfc-claim-top">
-          <div class="ytfc-claim-main">
-            <span class="ytfc-claim-text">${claim.text}</span>
-          </div>
-          <span class="ytfc-verdict ${getVerdictClass(claim.verdict)}">${claim.verdict}</span>
-        </div>
-        <div class="ytfc-claim-detail">
-          ${detailTimestampMarkup}
-          <div class="ytfc-claim-explanation">${claim.explanation}</div>
-          <div class="ytfc-claim-sources">
-            ${claim.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join("")}
-          </div>
-        </div>
-      `;
-
-      li.addEventListener("click", () => {
-        li.classList.toggle("ytfc-expanded");
-      });
-
-      const detailTimestampButton = li.querySelector(".ytfc-claim-detail-timestamp");
-      if (detailTimestampButton) {
-        detailTimestampButton.addEventListener("click", (event) => {
-          event.stopPropagation();
-          seekVideoTo(parseFloat(detailTimestampButton.dataset.time));
-        });
-      }
-
-      claimsList.appendChild(li);
-    });
-    card.appendChild(claimsList);
+    appendAnalysisSection(card, "Claims", analysis.claims);
+    if (analysis.opinions.length > 0) {
+      appendAnalysisSection(card, "Opinions Detected", analysis.opinions);
+    }
 
     // Aggregated sources
     const sourcesHeader = document.createElement("div");
@@ -556,14 +812,18 @@
 
     const sourcesGrid = document.createElement("div");
     sourcesGrid.className = "ytfc-sources-grid";
-    data.aggregatedSources.forEach((src) => {
-      const a = document.createElement("a");
-      a.className = "ytfc-source-chip";
-      a.href = src.url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = src.name;
-      sourcesGrid.appendChild(a);
+    analysis.aggregatedSources.forEach((src) => {
+      const el = src.url ? document.createElement("a") : document.createElement("span");
+      el.className = "ytfc-source-chip";
+      if (src.url) {
+        el.href = src.url;
+        el.target = "_blank";
+        el.rel = "noopener";
+      } else {
+        el.classList.add("ytfc-source-chip-static");
+      }
+      el.textContent = src.name;
+      sourcesGrid.appendChild(el);
     });
     card.appendChild(sourcesGrid);
 
@@ -676,7 +936,15 @@
     console.log("[FactChecker] Clip result:", result.verdict);
 
     removeClipLoading();
-    clipResults.unshift(result);
+    clipResults.unshift({
+      ...result,
+      localId: createClipLocalId(),
+      publishState: "idle",
+      publishError: "",
+      publishedClipId: null,
+      publishedAt: null,
+      voteSummary: null
+    });
     renderClipSidebar();
   }
 
@@ -698,8 +966,11 @@
         </div>
       </div>
       <div class="ytfc-clip-sidebar-header">
-        <span class="ytfc-clip-sidebar-title">Clip Fact-Checks</span>
-        <span class="ytfc-clip-count">0 clips</span>
+        <div class="ytfc-clip-sidebar-title-group">
+          <span class="ytfc-clip-sidebar-title">Clip Fact-Checks</span>
+          <span class="ytfc-clip-count">0 clips</span>
+        </div>
+        <a class="ytfc-board-link" href="${API_getBoardUrl(window.location.href)}" target="_blank" rel="noopener">Open board</a>
       </div>
       <div class="ytfc-clip-list">
         <div class="ytfc-clip-empty">Record a clip to fact-check it</div>
@@ -711,6 +982,7 @@
       secondary.insertBefore(sidebar, secondary.firstChild);
     }
 
+    updateBoardLink();
     renderTimelineClaims();
   }
 
@@ -752,6 +1024,11 @@
     clipResults.forEach((clip) => {
       const card = document.createElement("div");
       card.className = "ytfc-clip-card";
+      const publishLabel = getClipPublishLabel(clip);
+      const publishDisabled = clip.publishState === "publishing" || clip.publishState === "published";
+      const publishMeta = clip.publishState === "published" && clip.voteSummary
+        ? `<div class="ytfc-clip-publish-meta">Published · ${clip.voteSummary.totalVotes} vote${clip.voteSummary.totalVotes !== 1 ? "s" : ""}</div>`
+        : (clip.publishError ? `<div class="ytfc-clip-publish-error">${escapeHtml(clip.publishError)}</div>` : "");
       card.innerHTML = `
         <div class="ytfc-clip-timestamp">
           <span class="ytfc-clip-ts" data-time="${clip.startTime}">${formatTime(clip.startTime)}</span> – <span class="ytfc-clip-ts" data-time="${clip.endTime}">${formatTime(clip.endTime)}</span>
@@ -764,12 +1041,22 @@
         <div class="ytfc-clip-sources">
           ${clip.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join(" · ")}
         </div>
+        <div class="ytfc-clip-actions">
+          <button class="ytfc-clip-publish-btn" type="button" data-clip-id="${clip.localId}" ${publishDisabled ? "disabled" : ""}>${publishLabel}</button>
+          ${publishMeta}
+        </div>
       `;
       card.querySelectorAll(".ytfc-clip-ts").forEach((ts) => {
         ts.addEventListener("click", () => {
           seekVideoTo(parseFloat(ts.dataset.time));
         });
       });
+      const publishButton = card.querySelector(".ytfc-clip-publish-btn");
+      if (publishButton) {
+        publishButton.addEventListener("click", () => {
+          publishClipResult(publishButton.dataset.clipId);
+        });
+      }
 
       list.appendChild(card);
     });
