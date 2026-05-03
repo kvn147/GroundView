@@ -501,7 +501,9 @@ async def analyze_video_events(
             break
 
         extracted = await extract_claims(chunk["text"], chunk["timestamp"])
-        for claim_info in extracted:
+        # NOTE: extracted.opinions is currently dropped here; opinion-pipeline
+        # wiring lands in the api/video.py integration commit.
+        for claim_info in extracted.facts:
             if request is not None and await request.is_disconnected():
                 break
             claim_start_time, claim_end_time = _claim_time_bounds(
@@ -663,13 +665,16 @@ async def analyze_clip_events(
             break
 
     extracted = await extract_claims(selected["text"], selected["timestamp"])
-    if not extracted:
+    # Clip path verifies the first FACT only. Opinions in the clip are
+    # currently ignored here; opinion-pipeline wiring lands in the
+    # integration commit.
+    if not extracted.facts:
         response = _empty_clip_response(req)
         event, _seq = await _emit("done", run_id, seq, result=response.model_dump())
         yield event
         return
 
-    claim_info = extracted[0]
+    claim_info = extracted.facts[0]
     claim_start_time, claim_end_time = _claim_time_bounds(
         claim_info,
         selected["timestamp"],
