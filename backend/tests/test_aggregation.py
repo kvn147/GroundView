@@ -48,14 +48,18 @@ def _annotation(
     )
 
 
-def _opinion_ann(lean_value: float, lean_label: str = "Center / Neutral") -> OpinionAnnotation:
+def _opinion_ann(
+    lean_value: float,
+    lean_label: str = "Center / Neutral",
+    confidence: float = 0.8,
+) -> OpinionAnnotation:
     return OpinionAnnotation(
         opinion=_opinion_obj(),
         results=[],
         lean_value=lean_value,
         lean_label=lean_label,
         reasoning="",
-        confidence=0.8,
+        confidence=confidence,
     )
 
 
@@ -176,6 +180,25 @@ class TestPoliticalLeanFromOpinions:
         result = political_lean_from_opinions([_opinion_ann(0.5), _opinion_ann(0.8)])
         assert result.label == "Leans Right"
 
+    def test_zero_confidence_opinions_excluded_from_lean(self):
+        """An opinion the system couldn't lean-rate (confidence == 0)
+        must NOT contribute its 0.0 lean_value to the average — that
+        would dilute clear leans toward Center."""
+        opinions = [
+            _opinion_ann(0.5, confidence=0.0),   # unscoreable — exclude
+            _opinion_ann(0.5, confidence=1.0),   # clearly right
+            _opinion_ann(0.5, confidence=1.0),   # clearly right
+            _opinion_ann(0.5, confidence=0.0),   # unscoreable — exclude
+        ]
+        result = political_lean_from_opinions(opinions)
+        assert result.label == "Leans Right"
+
+    def test_all_zero_confidence_returns_unknown(self):
+        opinions = [_opinion_ann(0.0, confidence=0.0) for _ in range(3)]
+        result = political_lean_from_opinions(opinions)
+        assert result.label == "Unknown"
+        assert result.value == 0.5
+
 
 # ---------------------------------------------------------------------------
 # aggregate — separation invariants
@@ -255,9 +278,13 @@ class TestAggregateTopLevel:
         r = aggregate([_annotation(0.0, confidence_state="sources_disagree")], [])
         assert r.claims[0].verdict == "Mixed"
 
-    def test_verdict_unverified_for_insufficient(self):
+    def test_verdict_unable_to_verify_for_insufficient(self):
         r = aggregate([_annotation(0.0, confidence_state="insufficient_coverage")], [])
-        assert r.claims[0].verdict == "Unverified"
+        # "Unable to verify" — distinct from "Unverified". The system
+        # tried to fact-check this claim and our allowlist had no
+        # coverage. That's different from finding contradictory evidence
+        # (which is "Mixed").
+        assert r.claims[0].verdict == "Unable to verify"
 
     def test_opinion_lean_label_in_frontend(self):
         op = OpinionAnnotation(

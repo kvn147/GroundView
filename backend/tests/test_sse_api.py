@@ -421,3 +421,145 @@ async def test_mixed_facts_and_opinions_both_render(
     assert result["trustworthinessScore"] == 5
     # Lean reflects the right-leaning opinion
     assert result["politicalLean"]["label"] == "Leans Right"
+
+
+# ---------------------------------------------------------------------------
+# Cross-chunk dedup
+#
+# Transcript chunks overlap by 10s, so a claim spoken near a boundary is
+# extracted from two consecutive chunks. The pipeline tracks a normalized
+# signature per item to skip duplicates without paying for a second LLM
+# fan-out or showing the user a duplicate row.
+# ---------------------------------------------------------------------------
+
+
+def test_dedup_signature_collapses_punctuation_and_case() -> None:
+    """The normalizer should treat trivially-different phrasings as the
+    same claim. Two paraphrases of the LLM's typical output should
+    collide; semantically distinct claims should not."""
+    a = video._dedup_signature("Small businesses employ 1/4 of the workers.")
+    b = video._dedup_signature("Small businesses employ 1 4 of the workers")
+    c = video._dedup_signature("  small businesses  employ  1/4  of the  workers  ")
+    assert a == b == c
+
+    distinct = video._dedup_signature("The economy grew 3 percent.")
+    assert distinct != a
+
+
+def test_dedup_signature_handles_empty_and_punctuation_only() -> None:
+    assert video._dedup_signature("") == ""
+    assert video._dedup_signature("...") == ""
+    assert video._dedup_signature("   ") == ""
+
+
+@pytest.mark.asyncio
+async def test_chunk_overlap_does_not_double_count_facts(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    """Two adjacent transcript chunks return the same fact (the overlap
+    case). The pipeline should fan out and emit claim_final exactly
+    once."""
+
+    async def fake_get_transcript(url: str):
+        return [
+            {"text": "chunk one", "timestamp": 0.0},
+            {"text": "chunk two", "timestamp": 60.0},
+        ]
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return ExtractionResult(
+            facts=[
+                {
+                    "claim": "Small businesses employ 1/4 of the workers.",
+                    "raw_quote": "Small businesses employ 1/4 of the workers.",
+                    "timestamp": timestamp,
+                }
+            ],
+            opinions=[],
+        )
+
+    monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    claim_final_events = [e for e in events if e["event"] == "claim_final"]
+
+    # Without dedup we'd emit two — one per chunk. Dedup collapses to one.
+    assert len(claim_final_events) == 1
+    done = events[-1]
+    assert len(done["payload"]["result"]["claims"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_chunk_overlap_does_not_double_count_opinions(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    """Same overlap case for opinions: one statement spoken near a chunk
+    boundary should produce one opinion_resolved, not two."""
+
+    async def fake_get_transcript(url: str):
+        return [
+            {"text": "chunk one", "timestamp": 0.0},
+            {"text": "chunk two", "timestamp": 60.0},
+        ]
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return ExtractionResult(
+            facts=[],
+            opinions=[
+                {
+                    "statement": "We need stronger borders.",
+                    "raw_quote": "We need stronger borders.",
+                    "timestamp": timestamp,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+    monkeypatch.setattr(video, "get_opinion_agent", lambda: FakeOpinionAgent())
+
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    resolved = [e for e in events if e["event"] == "opinion_resolved"]
+    assert len(resolved) == 1
+    done = events[-1]
+    assert len(done["payload"]["result"]["opinions"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_distinct_claims_in_overlap_both_kept(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    """When the two chunks emit *different* claims, both should land in
+    the output — dedup must not collapse semantically distinct items."""
+
+    async def fake_get_transcript(url: str):
+        return [
+            {"text": "chunk one", "timestamp": 0.0},
+            {"text": "chunk two", "timestamp": 60.0},
+        ]
+
+    call_count = {"n": 0}
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            claim = "Inflation was 3 percent in 2022."
+        else:
+            claim = "Unemployment hit a 50-year low."
+        return ExtractionResult(
+            facts=[{"claim": claim, "raw_quote": claim, "timestamp": timestamp}],
+            opinions=[],
+        )
+
+    monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    claim_final_events = [e for e in events if e["event"] == "claim_final"]
+    assert len(claim_final_events) == 2
+    done = events[-1]
+    assert len(done["payload"]["result"]["claims"]) == 2

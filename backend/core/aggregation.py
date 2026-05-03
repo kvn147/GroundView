@@ -98,10 +98,20 @@ def political_lean_from_opinions(
     """Return a ``PoliticalLean`` derived *only* from opinion annotations.
 
     Falls back to ``PoliticalLean(label='Unknown', value=0.5)`` when empty.
+
+    Only opinions where the OpinionAgent's outlets actually staked a
+    position contribute to the average. Opinions where every outlet
+    came back ``unverifiable`` (``confidence == 0``) carry no signal,
+    so including their ``lean_value=0.0`` would dilute clear leans
+    toward the center — labeling a 4-opinion video as "Center" when
+    two opinions clearly lean right and two were unscoreable.
     """
     if not opinion_annotations:
         return PoliticalLean(label="Unknown", value=0.5)
-    avg_lean = sum(o.lean_value for o in opinion_annotations) / len(opinion_annotations)
+    contributing = [o for o in opinion_annotations if o.confidence > 0.0]
+    if not contributing:
+        return PoliticalLean(label="Unknown", value=0.5)
+    avg_lean = sum(o.lean_value for o in contributing) / len(contributing)
     label, value = bias_to_lean(avg_lean)
     return PoliticalLean(label=label, value=value)
 
@@ -118,7 +128,15 @@ def _verdict_from_state(annotation: Annotation) -> str:
         return "False"
     if annotation.confidence_state == "sources_disagree":
         return "Mixed"
-    return "Unverified"
+    # ``insufficient_coverage`` lands here. We deliberately distinguish
+    # this from "Unverified" — the system tried to fact-check the claim
+    # and our allowlisted sources had no coverage. That's a different
+    # signal from "we found contradictory evidence" (which is "Mixed").
+    # The honest framing is "Unable to verify": the claim might still
+    # be true, we just can't ground it in our allowlist. Pairs with the
+    # tighter L2a extractor that now drops most non-fact-shaped items
+    # before they reach this branch.
+    return "Unable to verify"
 
 
 def _fact_claim_to_frontend(annotation: Annotation, idx: int) -> FrontendClaim:

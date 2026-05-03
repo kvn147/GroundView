@@ -401,6 +401,36 @@ async def get_published_clip(clip_id: int, sessionId: str | None = Query(None)):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+# Pattern strips everything that isn't a letter, digit, or whitespace —
+# punctuation, quotes, possessive apostrophes, hyphens etc. Combined with
+# lowercase + whitespace collapse, this turns "Small businesses employ
+# 1/4 of the workers" and "Small businesses employ one-quarter of the
+# workers." into the same signature most of the time. The LLM still
+# rephrases enough that exact match isn't perfect — see the docstring
+# below for the trade-off.
+_DEDUP_NON_ALNUM = re.compile(r"[^\w\s]+")
+_DEDUP_WS = re.compile(r"\s+")
+
+
+def _dedup_signature(text: str) -> str:
+    """Return a normalized signature for dedup comparison.
+
+    Lowercases, strips punctuation, collapses whitespace. Two strings
+    that produce the same signature are treated as duplicates.
+
+    This is intentionally exact-match-after-normalization, not fuzzy.
+    Fuzzy similarity (Levenshtein, Jaccard) handles paraphrases better
+    but introduces a threshold parameter and false-positive risk
+    ("the economy grew" vs "the economy shrank" would be 90%+ similar
+    by token-overlap). Exact-after-normalization undercatches some
+    duplicates but never collapses semantically distinct claims.
+    """
+    if not text:
+        return ""
+    cleaned = _DEDUP_NON_ALNUM.sub(" ", text.lower())
+    return _DEDUP_WS.sub(" ", cleaned).strip()
+
+
 def _confidence_state_from_score(final_score: float) -> ConfidenceState:
     """Map judge's numeric score onto the L4b state enum from
     AGENTIC_WORKFLOW.md. Threshold-based, deterministic."""
@@ -619,6 +649,12 @@ async def analyze_video_events(
     opinion_annotations: list[OpinionAnnotation] = []
     claim_index = 0
     opinion_index = 0
+    # Chunks overlap by 10s so a claim spoken near a boundary can be
+    # extracted from two consecutive chunks. Track signatures we've
+    # already processed to avoid double-rendering, double-paying for
+    # LLM calls, and skewing aggregate counts.
+    seen_fact_signatures: set[str] = set()
+    seen_opinion_signatures: set[str] = set()
 
     for chunk in chunks:
         if request is not None and await request.is_disconnected():
@@ -630,6 +666,10 @@ async def analyze_video_events(
         for claim_info in extracted.facts:
             if request is not None and await request.is_disconnected():
                 break
+            signature = _dedup_signature(claim_info.get("claim", ""))
+            if signature and signature in seen_fact_signatures:
+                continue
+            seen_fact_signatures.add(signature)
             claim_start_time, claim_end_time = _claim_time_bounds(
                 claim_info,
                 chunk["timestamp"],
@@ -725,6 +765,10 @@ async def analyze_video_events(
         for opinion_info in extracted.opinions:
             if request is not None and await request.is_disconnected():
                 break
+            signature = _dedup_signature(opinion_info.get("statement", ""))
+            if signature and signature in seen_opinion_signatures:
+                continue
+            seen_opinion_signatures.add(signature)
             opinion_start_time, opinion_end_time = _claim_time_bounds(
                 {
                     "claim": opinion_info["statement"],
