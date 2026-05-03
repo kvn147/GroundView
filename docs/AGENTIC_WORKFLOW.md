@@ -31,7 +31,7 @@ This framing defuses bias attacks and is the project's identity. Do not drift fr
 ### Level 2b — Topic Routing (hybrid)
 - Keyword tables first (deterministic), Haiku fallback for ambiguous cases.
 - Multi-label allowed.
-- Out-of-scope claims (no topic match, no LLM rescue) flow to `insufficient_coverage` rather than being force-routed (see ADR-0003).
+- Out-of-scope claims (no topic match, no LLM rescue) flow to `insufficient_coverage` rather than being force-routed.
 
 ### Level 3 — Topic Agents (cheap LLM + embeddings)
 - 4 agents, each with hard-coded `ALLOWED_SOURCES` frozenset.
@@ -83,7 +83,7 @@ type Claim = {
   claim_text: string,           // verbatim from caption
   claim_type: "voting_record" | "statistic" | "prior_statement"
             | "policy_outcome" | "biographical",
-  topics: string[],             // multi-label routing tags (canonical IDs — see ADR-0002)
+  topics: string[],             // multi-label routing tags, lowercase snake_case canonical IDs
   speaker: string,
   start_time: number,
   end_time: number,
@@ -144,10 +144,3 @@ type Annotation = {
 
 Same input must never hit an external API twice across the hackathon. Disk cache keyed by content hash, with the model string included in the key so a model swap correctly invalidates.
 
----
-
-## Cross-references
-
-- **ADR-0001** — OpenRouter as the single LLM gateway.
-- **ADR-0002** — Topic name canonicalization (`legislative` / `economy` / `historical_statements` / `policy_outcome`).
-- **ADR-0003** — No-route claims become `insufficient_coverage`, not forced into a closest topic.
