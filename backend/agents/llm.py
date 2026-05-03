@@ -48,7 +48,7 @@ class OpenRouterLlmClient:
         # set up its env yet. Failures surface at the first call as
         # AuthenticationError, which the agent base catches and logs
         # as ``error="llm_error: ..."``.
-        self._client = AsyncOpenAI(base_url=base_url, api_key=resolved_key)
+        self._client = AsyncOpenAI(base_url=base_url, api_key=resolved_key or "placeholder")
         self._extra_headers = {
             "HTTP-Referer": referer,
             "X-Title": title,

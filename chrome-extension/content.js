@@ -9,7 +9,6 @@
   let recordStartTime = 0;
   let recordTimerInterval = null;
   let clipResults = [];
-  let activeAnalysisCancel = null;
   let currentTranscriptId = null;
   let currentTranscriptSegments = [];
 
@@ -31,132 +30,165 @@
     return video ? video.currentTime : 0;
   }
 
-  function extractBalancedJson(source, marker) {
-    const markerIndex = source.indexOf(marker);
-    if (markerIndex === -1) return null;
-
-    const start = source.indexOf("{", markerIndex);
-    if (start === -1) return null;
-
-    let depth = 0;
-    let inString = false;
-    let escaped = false;
-
-    for (let i = start; i < source.length; i += 1) {
-      const char = source[i];
-
-      if (inString) {
-        if (escaped) {
-          escaped = false;
-        } else if (char === "\\") {
-          escaped = true;
-        } else if (char === "\"") {
-          inString = false;
-        }
-        continue;
-      }
-
-      if (char === "\"") {
-        inString = true;
-      } else if (char === "{") {
-        depth += 1;
-      } else if (char === "}") {
-        depth -= 1;
-        if (depth === 0) return source.slice(start, i + 1);
-      }
-    }
-
-    return null;
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  function getPlayerResponseFromPage() {
-    const scripts = Array.from(document.querySelectorAll("script"));
-    for (const script of scripts) {
-      const text = script.textContent || "";
-      if (!text.includes("ytInitialPlayerResponse")) continue;
-
-      const rawJson = extractBalancedJson(text, "ytInitialPlayerResponse");
-      if (!rawJson) continue;
-
-      try {
-        return JSON.parse(rawJson);
-      } catch (error) {
-        console.warn("[FactChecker] Failed to parse player response:", error);
-      }
-    }
-
-    return null;
-  }
-
-  function chooseCaptionTrack(captionTracks) {
-    if (!Array.isArray(captionTracks) || captionTracks.length === 0) return null;
-
-    const isEnglish = (track) => {
-      const code = track.languageCode || "";
-      const label = track.name && track.name.simpleText ? track.name.simpleText : "";
-      return code.toLowerCase().startsWith("en") || /english/i.test(label);
-    };
-    const isManual = (track) => track.kind !== "asr";
-
-    return (
-      captionTracks.find((track) => isEnglish(track) && isManual(track)) ||
-      captionTracks.find(isEnglish) ||
-      captionTracks.find(isManual) ||
-      captionTracks[0]
+  function isTranscriptPanelOpen() {
+    return !!(
+      document.querySelector("ytd-transcript-renderer") ||
+      document.querySelector("transcript-segment-view-model")
     );
   }
 
-  function parseJson3Transcript(payload) {
-    const events = Array.isArray(payload.events) ? payload.events : [];
-    return events
-      .filter((event) => Array.isArray(event.segs))
-      .map((event) => ({
-        timestamp: (event.tStartMs || 0) / 1000,
-        text: event.segs.map((seg) => seg.utf8 || "").join("").trim()
-      }))
-      .filter((segment) => segment.text);
+  async function openTranscriptPanel() {
+    if (isTranscriptPanelOpen()) {
+      console.log("[FactChecker] Transcript panel already open");
+      return true;
+    }
+
+    // Expand the description to reveal the "Show transcript" button
+    const expandBtn = document.querySelector("tp-yt-paper-button#expand") ||
+                      document.querySelector("#description-inline-expander #expand") ||
+                      document.querySelector("ytd-text-inline-expander #expand");
+    if (expandBtn) {
+      console.log("[FactChecker] Expanding description...");
+      expandBtn.click();
+      await delay(500);
+    }
+
+    // Look for "Show transcript" button — try multiple selectors
+    const allButtons = Array.from(document.querySelectorAll("button"));
+    const transcriptBtn = allButtons.find((btn) => {
+      const text = (btn.textContent || "").trim().toLowerCase();
+      return text.includes("show transcript") || text === "transcript";
+    });
+
+    if (!transcriptBtn) {
+      // Try the transcript section renderer
+      const section = document.querySelector("ytd-video-description-transcript-section-renderer");
+      if (section) {
+        const btn = section.querySelector("button");
+        if (btn) {
+          console.log("[FactChecker] Clicking transcript section button");
+          btn.click();
+          await delay(2000);
+          return isTranscriptPanelOpen();
+        }
+      }
+      console.error("[FactChecker] Could not find 'Show transcript' button");
+      return false;
+    }
+
+    console.log("[FactChecker] Clicking 'Show transcript' button");
+    transcriptBtn.click();
+    await delay(2000);
+    return isTranscriptPanelOpen();
   }
 
-  function parseXmlTranscript(xmlText) {
-    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
-    return Array.from(doc.querySelectorAll("text"))
-      .map((node) => ({
-        timestamp: Number.parseFloat(node.getAttribute("start") || "0"),
-        text: (node.textContent || "").trim()
-      }))
-      .filter((segment) => segment.text);
+  function parseTimestamp(timeStr) {
+    const parts = timeStr.split(":").map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return 0;
+  }
+
+  function scrapeTranscriptSegments() {
+    const segments = [];
+
+    // Current YouTube DOM: transcript-segment-view-model
+    const segmentEls = document.querySelectorAll("transcript-segment-view-model");
+
+    if (segmentEls.length > 0) {
+      console.log("[FactChecker] Found", segmentEls.length, "transcript-segment-view-model elements");
+      segmentEls.forEach((el) => {
+        const timeEl = el.querySelector(".ytwTranscriptSegmentViewModelTimestamp");
+        const textEl = el.querySelector("span.ytAttributedStringHost");
+
+        const timeStr = timeEl ? timeEl.textContent.trim() : "";
+        const text = textEl ? textEl.textContent.trim() : "";
+
+        if (text) {
+          segments.push({ timestamp: parseTimestamp(timeStr), text });
+        }
+      });
+      return segments;
+    }
+
+    // Fallback: older YouTube DOM (ytd-transcript-segment-renderer)
+    const legacyEls = document.querySelectorAll("ytd-transcript-segment-renderer");
+    if (legacyEls.length > 0) {
+      console.log("[FactChecker] Found", legacyEls.length, "ytd-transcript-segment-renderer elements (legacy)");
+      legacyEls.forEach((el) => {
+        const timeEl = el.querySelector(".segment-timestamp, [class*='timestamp']");
+        const textEl = el.querySelector(".segment-text, yt-formatted-string");
+
+        const timeStr = timeEl ? timeEl.textContent.trim() : "";
+        const text = textEl ? textEl.textContent.trim() : "";
+
+        if (text) {
+          segments.push({ timestamp: parseTimestamp(timeStr), text });
+        }
+      });
+    }
+
+    return segments;
+  }
+
+  function closeTranscriptPanel() {
+    // Try the X button on the engagement panel
+    const closeBtn = document.querySelector(
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'] #visibility-button button"
+    ) || document.querySelector(
+      "ytd-engagement-panel-section-list-renderer button[aria-label='Close transcript']"
+    );
+    if (closeBtn) {
+      closeBtn.click();
+      console.log("[FactChecker] Closed transcript panel");
+    }
   }
 
   async function fetchTranscriptSegments() {
-    const playerResponse = getPlayerResponseFromPage();
-    const captionTracks =
-      playerResponse &&
-      playerResponse.captions &&
-      playerResponse.captions.playerCaptionsTracklistRenderer &&
-      playerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
+    console.log("[FactChecker] Opening transcript panel to scrape segments...");
 
-    const track = chooseCaptionTrack(captionTracks);
-    if (!track || !track.baseUrl) {
-      throw new Error("No YouTube caption track found on this page.");
+    const opened = await openTranscriptPanel();
+    if (!opened) {
+      throw new Error("Could not open transcript panel. Video may not have captions.");
     }
 
-    const url = new URL(track.baseUrl);
-    url.searchParams.set("fmt", "json3");
+    // Wait for segments to render
+    await delay(1000);
 
-    const response = await fetch(url.toString(), { credentials: "include" });
-    if (!response.ok) throw new Error(`Caption fetch failed with ${response.status}`);
-
-    const body = await response.text();
-    try {
-      const json = JSON.parse(body);
-      const segments = parseJson3Transcript(json);
-      if (segments.length > 0) return segments;
-    } catch (_error) {
-      const segments = parseXmlTranscript(body);
-      if (segments.length > 0) return segments;
+    // Scroll the transcript panel to load all segments (may be virtualized)
+    const scrollContainer = document.querySelector(
+      "ytd-transcript-renderer #body, " +
+      "ytd-transcript-renderer [class*='body'], " +
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'] #content"
+    );
+    if (scrollContainer) {
+      console.log("[FactChecker] Scrolling transcript panel to load all segments...");
+      let prevHeight = 0;
+      for (let i = 0; i < 50; i++) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        await delay(200);
+        if (scrollContainer.scrollHeight === prevHeight) break;
+        prevHeight = scrollContainer.scrollHeight;
+      }
+      scrollContainer.scrollTop = 0;
     }
 
-    throw new Error("Caption track did not contain readable transcript text.");
+    const segments = scrapeTranscriptSegments();
+    console.log("[FactChecker] Scraped", segments.length, "transcript segments from DOM");
+
+    if (segments.length === 0) {
+      const all = document.querySelectorAll("transcript-segment-view-model, ytd-transcript-segment-renderer");
+      console.error("[FactChecker] 0 segments scraped. Raw segment elements found:", all.length);
+      closeTranscriptPanel();
+      throw new Error("Transcript panel opened but no segments found.");
+    }
+
+    closeTranscriptPanel();
+    return segments;
   }
 
   function getVerdictClass(verdict) {
@@ -168,23 +200,7 @@
     return `ytfc-score-${score}`;
   }
 
-  function emptyVideoAnalysis() {
-    return {
-      summary: "Analyzing video for political claims...",
-      trustworthinessScore: 3,
-      maxScore: 5,
-      trustworthinessLabel: "Analyzing",
-      politicalLean: { label: "Unknown", value: 0.5 },
-      claims: [],
-      aggregatedSources: []
-    };
-  }
-
   function cleanup() {
-    if (activeAnalysisCancel) {
-      activeAnalysisCancel();
-      activeAnalysisCancel = null;
-    }
     document.querySelectorAll(".ytfc-card, .ytfc-loading-card, .ytfc-clip-sidebar").forEach((el) => el.remove());
     const btn = document.querySelector(".ytfc-record-btn");
     if (btn) btn.remove();
@@ -394,28 +410,10 @@
     addClipLoading();
 
     const videoUrl = window.location.href;
-    if (typeof API_streamClipAnalysis === "function") {
-      let settled = false;
-      API_streamClipAnalysis(videoUrl, recordStartTime, endTime, currentTranscriptId, {
-        onDone: (event) => {
-          settled = true;
-          removeClipLoading();
-          clipResults.unshift(event.result);
-          renderClipSidebar();
-        },
-        onConnectionError: async () => {
-          if (settled) return;
-          settled = true;
-          const result = await API_analyzeClip(videoUrl, recordStartTime, endTime, currentTranscriptId);
-          removeClipLoading();
-          clipResults.unshift(result);
-          renderClipSidebar();
-        }
-      });
-      return;
-    }
+    console.log("[FactChecker] Analyzing clip:", { start: recordStartTime, end: endTime });
 
     const result = await API_analyzeClip(videoUrl, recordStartTime, endTime, currentTranscriptId);
+    console.log("[FactChecker] Clip result:", result.verdict);
 
     removeClipLoading();
     clipResults.unshift(result);
@@ -524,10 +522,17 @@
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     const tags = metaKeywords ? metaKeywords.content : "";
 
+    console.log("[FactChecker] Extracted metadata:", {
+      title: title.substring(0, 80),
+      descriptionLength: description.length,
+      tagsLength: tags.length
+    });
+
     // Step 1: Check if political
     injectLoadingCard();
 
     const politicalCheck = await API_checkIfPolitical({ title, description, tags });
+    console.log("[FactChecker] Political check result:", politicalCheck);
 
     if (!politicalCheck.isPolitical) {
       document.querySelectorAll(".ytfc-loading-card").forEach((el) => el.remove());
@@ -535,66 +540,38 @@
       return;
     }
 
+    console.log("[FactChecker] Video is political, proceeding with transcript extraction...");
+
     try {
       currentTranscriptSegments = await fetchTranscriptSegments();
+      console.log("[FactChecker] Transcript extracted:", currentTranscriptSegments.length, "segments");
       const upload = await API_uploadTranscript(window.location.href, currentTranscriptSegments);
       currentTranscriptId = upload.transcriptId;
-      console.log("[FactChecker] Transcript uploaded:", upload);
+      console.log("[FactChecker] Transcript uploaded:", {
+        transcriptId: upload.transcriptId,
+        chunkCount: upload.chunkCount,
+        totalCharacters: upload.totalCharacters
+      });
     } catch (error) {
       currentTranscriptId = null;
       currentTranscriptSegments = [];
-      console.error("[FactChecker] Could not extract/upload transcript:", error);
+      console.error("[FactChecker] Transcript extraction/upload failed:", error.message || error);
     }
 
     // Step 2: Full analysis
-    if (typeof API_streamFullAnalysis === "function") {
-      const analysis = emptyVideoAnalysis();
-      let settled = false;
+    console.log("[FactChecker] Starting full analysis...", {
+      url: window.location.href,
+      transcriptId: currentTranscriptId,
+      hasTranscript: currentTranscriptSegments.length > 0
+    });
 
-      activeAnalysisCancel = API_streamFullAnalysis(window.location.href, currentTranscriptId, {
-        onClaimFinal: (event) => {
-          analysis.claims[event.claimIndex] = event.claim;
-          injectFactCheckCard(analysis);
-        },
-        onSummaryUpdated: (event) => {
-          analysis.summary = event.summary;
-          analysis.trustworthinessScore = event.trustworthinessScore;
-          analysis.maxScore = event.maxScore;
-          analysis.trustworthinessLabel = event.trustworthinessLabel;
-          analysis.politicalLean = event.politicalLean;
-          analysis.aggregatedSources = event.aggregatedSources;
-          injectFactCheckCard(analysis);
-        },
-        onDone: (event) => {
-          settled = true;
-          activeAnalysisCancel = null;
-          injectFactCheckCard(event.result);
-        },
-        onStreamError: (event) => {
-          console.warn("[FactChecker] recoverable stream error:", event);
-        },
-        onConnectionError: async () => {
-          if (settled) return;
-          settled = true;
-          activeAnalysisCancel = null;
-          const fallback = await API_getFullAnalysis(
-            window.location.href,
-            currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
-            currentTranscriptId
-          );
-          injectFactCheckCard(fallback);
-        }
-      });
-
-      injectFactCheckCard(analysis);
-    } else {
-      const analysis = await API_getFullAnalysis(
-        window.location.href,
-        currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
-        currentTranscriptId
-      );
-      injectFactCheckCard(analysis);
-    }
+    const analysis = await API_getFullAnalysis(
+      window.location.href,
+      currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
+      currentTranscriptId
+    );
+    console.log("[FactChecker] Analysis result — claims:", analysis.claims?.length || 0);
+    injectFactCheckCard(analysis);
 
     // Step 3: Inject record button & sidebar
     injectRecordButton();
@@ -630,12 +607,15 @@
   const urlObserver = new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
+      console.log("[FactChecker] URL changed:", lastUrl);
       if (lastUrl.includes("youtube.com/watch")) {
         // Wait for the page elements to render
-        waitForElement("#middle-row").then(() => {
+        waitForElement("#middle-row").then((el) => {
+          console.log("[FactChecker] #middle-row found:", !!el, "— scheduling initForVideo");
           setTimeout(initForVideo, 500);
         });
       } else {
+        console.log("[FactChecker] Not a watch page, cleaning up");
         cleanup();
         currentVideoId = null;
       }
