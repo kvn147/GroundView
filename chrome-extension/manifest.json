@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Political Fact-Checker",
+  "version": "0.1.0",
+  "description": "Automatically fact-checks political claims in YouTube videos",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": ["mock.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "48": "icons/icon48.png"
+  }
+}
