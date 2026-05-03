@@ -11,6 +11,8 @@ def _extract_video_id(url: str) -> str:
         return url.split("v=")[1].split("&")[0]
     if "youtu.be/" in url:
         return url.split("youtu.be/")[1].split("?")[0]
+    if "shorts/" in url:
+        return url.split("shorts/")[1].split("?")[0].split("&")[0]
     raise ValueError(f"Could not extract video ID from URL: {url}")
 
 
@@ -18,12 +20,11 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 async def get_transcript(youtube_url: str) -> list[dict]:
     video_id = _extract_video_id(youtube_url)
-    transcript = await asyncio.to_thread(
-        YouTubeTranscriptApi.get_transcript, video_id
-    )
+    api = YouTubeTranscriptApi()
+    fetched = await asyncio.to_thread(api.fetch, video_id)
     normalized = [
-        {"timestamp": round(s["start"], 2), "text": s["text"]}
-        for s in transcript
+        {"timestamp": round(s.start, 2), "text": s.text}
+        for s in fetched
     ]
     return _chunk_segments(normalized)
 
