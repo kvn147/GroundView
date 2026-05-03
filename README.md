@@ -1,4 +1,4 @@
-# GroundView: Fact and Opinion Checker Browser Extension -- BeaverHacks 2026
+# GroundView: Fact and Opinion Check Browser Extension -- BeaverHacks 2026
 Team: Cole, Tyler, David, Kevin
 
 > **One-sentence pitch:** "We built a fact and opinion checker for political debates and speeches on YouTube."
