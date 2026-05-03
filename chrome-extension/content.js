@@ -104,6 +104,149 @@
     return 0;
   }
 
+  function isTimestampLabel(value) {
+    return /^\d{1,2}:\d{2}(?::\d{2})?$/.test((value || "").trim());
+  }
+
+  function isElementVisible(el) {
+    if (!(el instanceof Element)) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function getOwnVisibleText(el) {
+    if (!(el instanceof Element)) return "";
+    return (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function getTimestampNode(root) {
+    if (!(root instanceof Element)) return null;
+    const candidates = [root, ...root.querySelectorAll("*")];
+    for (const el of candidates) {
+      const text = getOwnVisibleText(el);
+      if (!isElementVisible(el) || !isTimestampLabel(text)) continue;
+      return el;
+    }
+    return null;
+  }
+
+  function getRowTextFromNode(row, timeNode) {
+    const preferred = [
+      "span.ytAttributedStringHost",
+      ".segment-text",
+      "yt-formatted-string",
+      "[class*='segment-text']",
+      "[class*='transcript'] span"
+    ];
+
+    for (const selector of preferred) {
+      const match = row.querySelector(selector);
+      const text = getOwnVisibleText(match);
+      if (text && (!timeNode || match !== timeNode)) return text;
+    }
+
+    const clone = row.cloneNode(true);
+    const removable = [clone, ...clone.querySelectorAll("*")];
+    removable.forEach((el) => {
+      const text = getOwnVisibleText(el);
+      if (isTimestampLabel(text)) {
+        el.remove();
+      }
+    });
+    return getOwnVisibleText(clone);
+  }
+
+  function extractSegmentFromRow(row) {
+    const timeNode = getTimestampNode(row);
+    if (!timeNode) return null;
+
+    const timeStr = getOwnVisibleText(timeNode);
+    const text = getRowTextFromNode(row, timeNode);
+    if (!text) return null;
+
+    return {
+      timestamp: parseTimestamp(timeStr),
+      text
+    };
+  }
+
+  function getTranscriptPanelRoot() {
+    return document.querySelector(
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'], ytd-transcript-renderer"
+    );
+  }
+
+  function findTranscriptStartAnchor() {
+    const panelRoot = getTranscriptPanelRoot() || document;
+    const candidates = Array.from(panelRoot.querySelectorAll("*"));
+    return candidates.find((el) => isElementVisible(el) && getOwnVisibleText(el) === "0:00") || null;
+  }
+
+  function getTimestampRowCount(container, sampleRow) {
+    if (!(container instanceof Element) || !(sampleRow instanceof Element)) return 0;
+    const sampleTag = sampleRow.tagName;
+    const sameTagRows = Array.from(container.querySelectorAll(sampleTag));
+    const directChildren = Array.from(container.children);
+    const directMatches = directChildren.filter((child) => getTimestampNode(child));
+    const sameTagMatches = sameTagRows.filter((row) => getTimestampNode(row));
+    return Math.max(directMatches.length, sameTagMatches.length);
+  }
+
+  function findTranscriptContainerFromAnchor(anchor) {
+    if (!(anchor instanceof Element)) return null;
+
+    let row = anchor;
+    for (let i = 0; i < 6 && row.parentElement; i += 1) {
+      if (extractSegmentFromRow(row)) break;
+      row = row.parentElement;
+    }
+
+    let bestContainer = row.parentElement || row;
+    let bestScore = getTimestampRowCount(bestContainer, row);
+    let current = row.parentElement;
+
+    for (let i = 0; i < 8 && current; i += 1) {
+      const score = getTimestampRowCount(current, row);
+      if (score >= bestScore) {
+        bestContainer = current;
+        bestScore = score;
+      }
+      current = current.parentElement;
+    }
+
+    return { row, container: bestContainer };
+  }
+
+  function scrapeTranscriptSegmentsFromInferredContainer() {
+    const anchor = findTranscriptStartAnchor();
+    if (!anchor) return [];
+
+    const resolved = findTranscriptContainerFromAnchor(anchor);
+    if (!resolved) return [];
+
+    const { row, container } = resolved;
+    const sampleTag = row.tagName;
+    const directChildren = Array.from(container.children);
+    const candidateRows = directChildren.some((child) => child.tagName === sampleTag)
+      ? directChildren.filter((child) => child.tagName === sampleTag)
+      : Array.from(container.querySelectorAll(sampleTag));
+
+    const segments = [];
+    const seen = new Set();
+
+    candidateRows.forEach((candidate) => {
+      const segment = extractSegmentFromRow(candidate);
+      if (!segment) return;
+
+      const key = `${segment.timestamp}:${segment.text}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      segments.push(segment);
+    });
+
+    return segments.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
   function scrapeTranscriptSegments() {
     const segments = [];
 
@@ -143,7 +286,15 @@
       });
     }
 
-    return segments;
+    if (segments.length > 0) {
+      return segments;
+    }
+
+    const inferredSegments = scrapeTranscriptSegmentsFromInferredContainer();
+    if (inferredSegments.length > 0) {
+      console.log("[FactChecker] Inferred transcript container from 0:00 anchor and scraped", inferredSegments.length, "segments");
+    }
+    return inferredSegments;
   }
 
   function closeTranscriptPanel() {
