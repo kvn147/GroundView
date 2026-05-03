@@ -1,12 +1,12 @@
-# Fact Checker Project -- BeaverHacks 2026
+# GroundView: Fact and Opinion Checker Browser Extension -- BeaverHacks 2026
 Team: Cole, Tyler, David, Kevin
 
-> **One-sentence pitch:** "We built a fact-check sidebar for political YouTube videos — so instead of Googling claims mid-debate, the context is already there next to the video."
+> **One-sentence pitch:** "We built a fact and opinion checker for political debates and speeches on YouTube."
 
-**Track: ConductorOne** — parallel agents, scoped tools, eval harness, judge model. The architecture sells itself.
+**Track: ConductorOne** — Our agentic architecture includes an orchestrator, parallel agents, scoped domain tools, eval harness, and judge model.
 
 ### What it is (Solution)
-A YouTube fact-check layer for political content. Paste a URL, we process the video, you get an interactive sidebar showing every verifiable claim annotated on the timeline with sourced context — without ever leaving the page.
+A YouTube fact-check layer for political content. It overlays on the YouTube page, we process the video and transcription, the user gets an interactive view of fact cards showing every verifiable claim annotated on the timeline with sourced context without having to leave the page.
 
 ### The problem it solves (Problem Scope)
 Misinformation is rampant across the internet and unbiased fact-checking is difficult. This solves two main issues:
@@ -24,11 +24,21 @@ Misinformation is rampant across the internet and unbiased fact-checking is diff
 ![alt text](infrastructure.png)
 
 ### What makes it different
+- Allow users to simulatenously verify facts and opinions.
 - Not a verdict machine — surfaces context and lets users decide
 - Flags out-of-context clips, not just false claims
-- Aggregates 5 sources and discloses when sourcing is skewed
-- Consumer-facing, not a newsroom tool
+- Aggregates 8 topics (domains) and discloses when sourcing is skewed/biased.
+- Consumer-facing tool
 
 ### Future Directions
 - Have this app be used as an overlay on live streams to check for misinformation.
 - Pitch to social media platforms such as YouTube and TikTok to use this as a feature on their platform.
+
+### Contributions
+For running the backend server: 'backend/venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000'
+For running the browser extension locally:
+1. On Chrome, go to: chrome://extensions/
+2. Enable Developer Mode
+3. Click Load Unpacked
+4. Select and Upload the 'chrome-extension' folder
+
