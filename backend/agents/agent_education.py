@@ -1,18 +1,18 @@
 """
-Healthcare Agent - Retrieves information for healthcare claims using OpenRouter.
+Education Agent - Retrieves information for education claims using OpenRouter.
 """
 
 from .base_agent import run_domain_agent
 
 async def retrieve_evidence(claim: str) -> str:
     """
-    Uses OpenRouter to retrieve facts and context about a healthcare claim. 
+    Uses OpenRouter to retrieve facts and context about an education claim. 
     Returns the gathered information in Markdown.
     """
     return await run_domain_agent(
-        domain="healthcare",
-        specialty_desc="healthcare and medical data",
-        source_examples="(like CDC, BLS, etc.)",
+        domain="education",
+        specialty_desc="education, demographic data, and policy",
+        source_examples="(like NCES, BLS, Census Bureau, Pew Research, etc.)",
         claim=claim
     )
 

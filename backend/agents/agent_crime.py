@@ -1,18 +1,18 @@
 """
-Healthcare Agent - Retrieves information for healthcare claims using OpenRouter.
+Crime Agent - Retrieves information for crime claims using OpenRouter.
 """
 
 from .base_agent import run_domain_agent
 
 async def retrieve_evidence(claim: str) -> str:
     """
-    Uses OpenRouter to retrieve facts and context about a healthcare claim. 
+    Uses OpenRouter to retrieve facts and context about a crime claim. 
     Returns the gathered information in Markdown.
     """
     return await run_domain_agent(
-        domain="healthcare",
-        specialty_desc="healthcare and medical data",
-        source_examples="(like CDC, BLS, etc.)",
+        domain="crime",
+        specialty_desc="criminal justice, crime statistics, and public safety",
+        source_examples="(like BJS, FBI, NIJ, Pew Research, etc.)",
         claim=claim
     )
 

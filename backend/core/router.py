@@ -11,11 +11,17 @@ DOMAINS = [
    
     "immigration",
     "healthcare",
+    "crime",
+        "economy",
+    "education"
 ]
 
 DOMAIN_DESCRIPTIONS = {
     "immigration": "border, deportation, visa, asylum, migrants, ICE",
     "healthcare": "insurance, Medicare, Medicaid, hospitals, FDA",
+    "crime": "crime, criminal justice, public safety",
+    "economy": "economy, GDP, inflation, taxes, unemployment",
+    "education": "education, schools, universities, student debt"
 }
 
 ROUTER_PROMPT = """Classify this political claim into exactly one domain.
