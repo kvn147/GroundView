@@ -52,3 +52,8 @@ Most recent on top. When your PR/commit lands, append an entry under today's dat
 **Changes:** Added API contract documentation and implemented synchronous API endpoints for backend and frontend integration. Updated backend with endpoint logic for political check, video analysis, and clip analysis, including prompt templates and mock backend.
 **Current status:** API endpoints are implemented and functional, with mock backend for testing.
 **Future issues / conflicts:** Asynchronous pipeline needs to be implemented to replace the synchronous endpoints.
+
+## 2026-05-03 - chore(frontend): update frontend to connect to backend and add claim verification logic
+**Changes:** Updated frontend to connect to backend API and implement claim verification logic using judge agents.
+**Current status:** Frontend is connected to backend and claim verification logic is implemented.
+**Future issues / conflicts:** Asynchronous pipeline needs to be implemented to replace the synchronous endpoints.
