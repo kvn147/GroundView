@@ -57,7 +57,7 @@ async def extract_claims(segment: str, timestamp_offset: float) -> list[dict]:
                 "X-Title": "ClearView",
             },
             json={
-                "model": "anthropic/claude-haiku-4-5",
+                "model": "anthropic/claude-haiku-4.5",
                 "messages": [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": prompt}

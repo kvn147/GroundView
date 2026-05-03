@@ -57,7 +57,7 @@ async def classify_claim(claim_text: str) -> tuple[str, float]:
                 "X-Title": "ClearView",
             },
             json={
-                "model": "anthropic/claude-haiku-4-5",
+                "model": "anthropic/claude-haiku-4.5",
                 "messages": [{"role": "user", "content": prompt}]
             }
         )
