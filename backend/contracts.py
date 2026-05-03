@@ -128,6 +128,7 @@ class EvidenceItem(BaseModel):
     p_entail: Optional[float] = None
     p_contradict: Optional[float] = None
     nli_source: Optional[NliSource] = None
+    stance: Optional[Literal["agree", "disagree", "unverifiable"]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +243,33 @@ class Annotation(BaseModel):
     bias_warning: Optional[str] = None
 
 
+class Opinion(BaseModel):
+    """A single subjective statement extracted from a caption window."""
+
+    statement: str
+    raw_quote: str
+    speaker: Optional[str] = None
+    start_time: float
+    end_time: float
+
+
+class OpinionAnnotation(BaseModel):
+    """Per-opinion aggregated record after the opinion-bias engine runs.
+
+    ``results`` always contains exactly one element (the OpinionAgent).
+    ``lean_value`` in ``[-1.0, +1.0]``: negative = left, positive = right.
+    ``confidence`` in ``[0, 1]`` reflects the fraction of evidence items
+    that had a clear stance (``agree`` or ``disagree``) vs. ``unverifiable``.
+    """
+
+    opinion: Opinion
+    results: list[VerificationResult]
+    lean_value: float = 0.0
+    lean_label: str = "Center / Neutral"
+    reasoning: str = ""
+    confidence: float = 0.0
+
+
 # ---------------------------------------------------------------------------
 # Frontend-facing response shapes (must match docs/API_CONTRACT.md)
 # ---------------------------------------------------------------------------
@@ -268,6 +296,34 @@ class FrontendActivity(BaseModel):
     model_used: str = ""
     duration_ms: int = 0
     error: Optional[str] = None
+
+
+class FrontendOpinionEvidence(BaseModel):
+    """One outlet's stance evidence for an opinion claim."""
+
+    outlet: str
+    stance: Literal["agree", "disagree", "unverifiable"]
+    summary: str
+
+
+class FrontendOpinionLean(BaseModel):
+    """Political-lean score for a single opinion statement."""
+
+    value: float      # -1.0 (left) .. +1.0 (right)
+    label: str
+    reasoning: str
+    confidence: float  # 0..1
+
+
+class FrontendOpinion(BaseModel):
+    """Chrome-extension shape for one opinion statement."""
+
+    statement: str
+    raw_quote: str
+    start_time: float
+    lean: FrontendOpinionLean
+    evidence: list[FrontendOpinionEvidence] = Field(default_factory=list)
+    activity: Optional[FrontendActivity] = None
 
 
 class FrontendClaim(BaseModel):
@@ -298,6 +354,7 @@ class AnalyzeVideoResponse(BaseModel):
     politicalLean: PoliticalLean = Field(default_factory=PoliticalLean)
     claims: list[FrontendClaim] = Field(default_factory=list)
     aggregatedSources: list[FrontendAggregatedSource] = Field(default_factory=list)
+    opinions: list[FrontendOpinion] = Field(default_factory=list)
 
 
 class AnalyzeClipResponse(BaseModel):
