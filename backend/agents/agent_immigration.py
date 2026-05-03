@@ -5,6 +5,7 @@ Immigration Agent - Retrieves information for immigration claims using OpenRoute
 import os
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+from .sources import get_sources_for_domain
 
 # Load the environment variables from your .env file
 load_dotenv()
@@ -20,18 +21,15 @@ async def retrieve_evidence(claim: str) -> str:
         api_key=os.environ.get("OPENROUTER_API_KEY"),
     )
     
-    system_instruction = """
+    sources_text = get_sources_for_domain("immigration")
+    
+    system_instruction = f"""
     You are an expert research assistant specializing in immigration, demographic data, and policy.
     Your ONLY job is to retrieve factual, reliable context for the given claim.
     You do NOT render a final true/false verdict.
     
     When searching your knowledge base, prioritize information from reliable sources:
-    - USCIS (U.S. Citizenship and Immigration Services) for immigration statistics and policy data.
-    - Migration Policy Institute for research and analysis on immigration policy.
-    - Pew Research Center for data on immigration trends and public opinion.
-    - The United Nations High Commissioner for Refugees (UNHCR) for information on refugees and asylum seekers.
-    - BLS (Bureau of Labor Statistics) for employment data related to immigration.
-    - Customs and Border Protection for border-related data and statistics.
+    {sources_text}
     
     Instructions:
     1. Retrieve thorough facts and statistics related to the claim from your knowledge base.

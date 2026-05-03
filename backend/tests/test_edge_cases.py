@@ -13,13 +13,16 @@ except ImportError:
 
 from backend.agents.agent_healthcare import retrieve_evidence as hc_retrieve
 from backend.agents.agent_immigration import retrieve_evidence as imm_retrieve
+from backend.agents.agent_crime import retrieve_evidence as cr_retrieve
+from backend.agents.agent_economy import retrieve_evidence as ec_retrieve
+from backend.agents.agent_education import retrieve_evidence as ed_retrieve
 
 async def test_edge_cases():
     if not os.getenv("OPENROUTER_API_KEY"):
         print("Error: OPENROUTER_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    print("Testing Edge Cases on Both Agents...\n")
+    print("Testing Edge Cases on All Agents...\n")
     
     # Claims that cross the boundary between Healthcare and Immigration
     edge_cases = [
@@ -48,6 +51,27 @@ async def test_edge_cases():
             print(imm_evidence)
         except Exception as e:
             print(f"Immigration agent failed: {e}")
+            
+        print("\n\n--- [CRIME AGENT RESPONSE] ---")
+        try:
+            cr_evidence = await cr_retrieve(claim)
+            print(cr_evidence)
+        except Exception as e:
+            print(f"Crime agent failed: {e}")
+            
+        print("\n\n--- [ECONOMY AGENT RESPONSE] ---")
+        try:
+            ec_evidence = await ec_retrieve(claim)
+            print(ec_evidence)
+        except Exception as e:
+            print(f"Economy agent failed: {e}")
+            
+        print("\n\n--- [EDUCATION AGENT RESPONSE] ---")
+        try:
+            ed_evidence = await ed_retrieve(claim)
+            print(ed_evidence)
+        except Exception as e:
+            print(f"Education agent failed: {e}")
             
         print("\n\n")
 

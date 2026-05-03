@@ -1,5 +1,5 @@
 """
-Healthcare Agent - Retrieves information for healthcare claims using OpenRouter.
+Education Agent - Retrieves information for education claims using OpenRouter.
 """
 
 import os
@@ -12,7 +12,7 @@ load_dotenv()
 
 async def retrieve_evidence(claim: str) -> str:
     """
-    Uses OpenRouter to retrieve facts and context about a healthcare claim. 
+    Uses OpenRouter to retrieve facts and context about an education claim. 
     Returns the gathered information in Markdown.
     """
     # Initialize the OpenAI client pointing to OpenRouter
@@ -21,10 +21,10 @@ async def retrieve_evidence(claim: str) -> str:
         api_key=os.environ.get("OPENROUTER_API_KEY"),
     )
     
-    sources_text = get_sources_for_domain("healthcare")
+    sources_text = get_sources_for_domain("education")
     
     system_instruction = f"""
-    You are an expert research assistant specializing in healthcare and medical data.
+    You are an expert research assistant specializing in education, demographic data, and policy.
     Your ONLY job is to retrieve factual, reliable context for the given claim.
     You do NOT render a final true/false verdict.
     
@@ -35,7 +35,7 @@ async def retrieve_evidence(claim: str) -> str:
     1. Retrieve thorough facts and statistics related to the claim from your knowledge base.
     2. Synthesize the raw facts, statistics, and context you find.
     3. Output the gathered information in clear Markdown format.
-    4. Mention the likely sources (like CDC, BLS, etc.) for this information.
+    4. Mention the likely sources (like NCES, BLS, Census Bureau, Pew Research, etc.) for this information.
     """
     
     prompt = f"Here is the claim you need to research:\n\"{claim}\"\n\nPlease provide the gathered evidence in Markdown."
