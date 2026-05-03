@@ -42,6 +42,7 @@ if "youtube_transcript_api" not in sys.modules:
 from backend.api import video
 from backend.app.level2b_routing.types import RoutingDecision
 from backend.contracts import EvidenceItem, Source, VerificationResult
+from backend.core.extract import ExtractionResult
 
 
 class FakeOrchestrator:
@@ -74,13 +75,16 @@ def mocked_pipeline(monkeypatch):
         return [{"text": "Inflation was 3 percent.", "timestamp": 12.0}]
 
     async def fake_extract_claims(text: str, timestamp: float):
-        return [
-            {
-                "claim": "Inflation was 3 percent.",
-                "raw_quote": "Inflation was 3 percent.",
-                "timestamp": timestamp,
-            }
-        ]
+        return ExtractionResult(
+            facts=[
+                {
+                    "claim": "Inflation was 3 percent.",
+                    "raw_quote": "Inflation was 3 percent.",
+                    "timestamp": timestamp,
+                }
+            ],
+            opinions=[],
+        )
 
     def fake_route(claim_text: str):
         return RoutingDecision(
@@ -145,13 +149,16 @@ async def test_analyze_video_events_process_all_transcript_chunks(
         ]
 
     async def fake_extract_claims(text: str, timestamp: float):
-        return [
-            {
-                "claim": text,
-                "raw_quote": text,
-                "timestamp": timestamp,
-            }
-        ]
+        return ExtractionResult(
+            facts=[
+                {
+                    "claim": text,
+                    "raw_quote": text,
+                    "timestamp": timestamp,
+                }
+            ],
+            opinions=[],
+        )
 
     monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
     monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
@@ -203,18 +210,21 @@ async def test_analyze_video_claim_timestamps_match_underlying_segments(
     monkeypatch,
 ) -> None:
     async def fake_extract_claims(text: str, timestamp: float):
-        return [
-            {
-                "claim": "Claim one.",
-                "raw_quote": "Claim one happened first.",
-                "timestamp": timestamp,
-            },
-            {
-                "claim": "Claim two.",
-                "raw_quote": "Claim two happened later.",
-                "timestamp": timestamp,
-            },
-        ]
+        return ExtractionResult(
+            facts=[
+                {
+                    "claim": "Claim one.",
+                    "raw_quote": "Claim one happened first.",
+                    "timestamp": timestamp,
+                },
+                {
+                    "claim": "Claim two.",
+                    "raw_quote": "Claim two happened later.",
+                    "timestamp": timestamp,
+                },
+            ],
+            opinions=[],
+        )
 
     monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
 
