@@ -69,6 +69,8 @@ def _claim_to_frontend(
     return FrontendClaim(
         id=f"claim-{idx + 1}",
         text=annotation.claim.claim_text,
+        startTime=annotation.claim.start_time,
+        endTime=annotation.claim.end_time,
         verdict=_verdict_label_from_state(annotation),
         explanation=_claim_explanation(annotation, idx),
         sources=[

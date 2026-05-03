@@ -81,7 +81,7 @@ Sent after transcript fetch, before claim extraction begins.
   "runId": "run-abc",
   "seq": 2,
   "chunkCount": 42,
-  "processedChunkLimit": 5
+  "processedChunkLimit": 42
 }
 ```
 
@@ -321,4 +321,3 @@ Clip analysis can keep the existing loading card but update it as soon as `claim
 ## Tradeoffs
 
 SSE is the right default here because the extension needs progress and partial results, not client-to-server messages. The main limitation is that `EventSource` is `GET`-only, so large clip caption payloads may eventually need the two-step job flow. If the product later needs user-driven cancellation, pausing, or sending live captions continuously from the browser, WebSockets would become more attractive.
-

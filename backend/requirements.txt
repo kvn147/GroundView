@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 httpx
-youtube-transcript-api
 openai
 pytest
 google-genai

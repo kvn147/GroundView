@@ -9,7 +9,12 @@
   let recordStartTime = 0;
   let recordTimerInterval = null;
   let clipResults = [];
-  let activeAnalysisCancel = null;
+  let currentAnalysis = null;
+  let currentTranscriptId = null;
+  let currentTranscriptSegments = [];
+  let timelineSyncInterval = null;
+
+  const CLAIM_ACTIVE_PADDING_SECONDS = 8;
 
   // ── Helpers ──
 
@@ -29,6 +34,325 @@
     return video ? video.currentTime : 0;
   }
 
+  function seekVideoTo(seconds) {
+    const video = document.querySelector("video.html5-main-video");
+    if (video) {
+      video.currentTime = seconds;
+    }
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function isTranscriptPanelOpen() {
+    return !!(
+      document.querySelector("ytd-transcript-renderer") ||
+      document.querySelector("transcript-segment-view-model")
+    );
+  }
+
+  async function openTranscriptPanel() {
+    if (isTranscriptPanelOpen()) {
+      console.log("[FactChecker] Transcript panel already open");
+      return true;
+    }
+
+    // Expand the description to reveal the "Show transcript" button
+    const expandBtn = document.querySelector("tp-yt-paper-button#expand") ||
+                      document.querySelector("#description-inline-expander #expand") ||
+                      document.querySelector("ytd-text-inline-expander #expand");
+    if (expandBtn) {
+      console.log("[FactChecker] Expanding description...");
+      expandBtn.click();
+      await delay(500);
+    }
+
+    // Look for "Show transcript" button — try multiple selectors
+    const allButtons = Array.from(document.querySelectorAll("button"));
+    const transcriptBtn = allButtons.find((btn) => {
+      const text = (btn.textContent || "").trim().toLowerCase();
+      return text.includes("show transcript") || text === "transcript";
+    });
+
+    if (!transcriptBtn) {
+      // Try the transcript section renderer
+      const section = document.querySelector("ytd-video-description-transcript-section-renderer");
+      if (section) {
+        const btn = section.querySelector("button");
+        if (btn) {
+          console.log("[FactChecker] Clicking transcript section button");
+          btn.click();
+          await delay(2000);
+          return isTranscriptPanelOpen();
+        }
+      }
+      console.error("[FactChecker] Could not find 'Show transcript' button");
+      return false;
+    }
+
+    console.log("[FactChecker] Clicking 'Show transcript' button");
+    transcriptBtn.click();
+    await delay(2000);
+    return isTranscriptPanelOpen();
+  }
+
+  function parseTimestamp(timeStr) {
+    const parts = timeStr.split(":").map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return 0;
+  }
+
+  function isTimestampLabel(value) {
+    return /^\d{1,2}:\d{2}(?::\d{2})?$/.test((value || "").trim());
+  }
+
+  function isElementVisible(el) {
+    if (!(el instanceof Element)) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function getOwnVisibleText(el) {
+    if (!(el instanceof Element)) return "";
+    return (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function getTimestampNode(root) {
+    if (!(root instanceof Element)) return null;
+    const candidates = [root, ...root.querySelectorAll("*")];
+    for (const el of candidates) {
+      const text = getOwnVisibleText(el);
+      if (!isElementVisible(el) || !isTimestampLabel(text)) continue;
+      return el;
+    }
+    return null;
+  }
+
+  function getRowTextFromNode(row, timeNode) {
+    const preferred = [
+      "span.ytAttributedStringHost",
+      ".segment-text",
+      "yt-formatted-string",
+      "[class*='segment-text']",
+      "[class*='transcript'] span"
+    ];
+
+    for (const selector of preferred) {
+      const match = row.querySelector(selector);
+      const text = getOwnVisibleText(match);
+      if (text && (!timeNode || match !== timeNode)) return text;
+    }
+
+    const clone = row.cloneNode(true);
+    const removable = [clone, ...clone.querySelectorAll("*")];
+    removable.forEach((el) => {
+      const text = getOwnVisibleText(el);
+      if (isTimestampLabel(text)) {
+        el.remove();
+      }
+    });
+    return getOwnVisibleText(clone);
+  }
+
+  function extractSegmentFromRow(row) {
+    const timeNode = getTimestampNode(row);
+    if (!timeNode) return null;
+
+    const timeStr = getOwnVisibleText(timeNode);
+    const text = getRowTextFromNode(row, timeNode);
+    if (!text) return null;
+
+    return {
+      timestamp: parseTimestamp(timeStr),
+      text
+    };
+  }
+
+  function getTranscriptPanelRoot() {
+    return document.querySelector(
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'], ytd-transcript-renderer"
+    );
+  }
+
+  function findTranscriptStartAnchor() {
+    const panelRoot = getTranscriptPanelRoot() || document;
+    const candidates = Array.from(panelRoot.querySelectorAll("*"));
+    return candidates.find((el) => isElementVisible(el) && getOwnVisibleText(el) === "0:00") || null;
+  }
+
+  function getTimestampRowCount(container, sampleRow) {
+    if (!(container instanceof Element) || !(sampleRow instanceof Element)) return 0;
+    const sampleTag = sampleRow.tagName;
+    const sameTagRows = Array.from(container.querySelectorAll(sampleTag));
+    const directChildren = Array.from(container.children);
+    const directMatches = directChildren.filter((child) => getTimestampNode(child));
+    const sameTagMatches = sameTagRows.filter((row) => getTimestampNode(row));
+    return Math.max(directMatches.length, sameTagMatches.length);
+  }
+
+  function findTranscriptContainerFromAnchor(anchor) {
+    if (!(anchor instanceof Element)) return null;
+
+    let row = anchor;
+    for (let i = 0; i < 6 && row.parentElement; i += 1) {
+      if (extractSegmentFromRow(row)) break;
+      row = row.parentElement;
+    }
+
+    let bestContainer = row.parentElement || row;
+    let bestScore = getTimestampRowCount(bestContainer, row);
+    let current = row.parentElement;
+
+    for (let i = 0; i < 8 && current; i += 1) {
+      const score = getTimestampRowCount(current, row);
+      if (score >= bestScore) {
+        bestContainer = current;
+        bestScore = score;
+      }
+      current = current.parentElement;
+    }
+
+    return { row, container: bestContainer };
+  }
+
+  function scrapeTranscriptSegmentsFromInferredContainer() {
+    const anchor = findTranscriptStartAnchor();
+    if (!anchor) return [];
+
+    const resolved = findTranscriptContainerFromAnchor(anchor);
+    if (!resolved) return [];
+
+    const { row, container } = resolved;
+    const sampleTag = row.tagName;
+    const directChildren = Array.from(container.children);
+    const candidateRows = directChildren.some((child) => child.tagName === sampleTag)
+      ? directChildren.filter((child) => child.tagName === sampleTag)
+      : Array.from(container.querySelectorAll(sampleTag));
+
+    const segments = [];
+    const seen = new Set();
+
+    candidateRows.forEach((candidate) => {
+      const segment = extractSegmentFromRow(candidate);
+      if (!segment) return;
+
+      const key = `${segment.timestamp}:${segment.text}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      segments.push(segment);
+    });
+
+    return segments.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  function scrapeTranscriptSegments() {
+    const segments = [];
+
+    // Current YouTube DOM: transcript-segment-view-model
+    const segmentEls = document.querySelectorAll("transcript-segment-view-model");
+
+    if (segmentEls.length > 0) {
+      console.log("[FactChecker] Found", segmentEls.length, "transcript-segment-view-model elements");
+      segmentEls.forEach((el) => {
+        const timeEl = el.querySelector(".ytwTranscriptSegmentViewModelTimestamp");
+        const textEl = el.querySelector("span.ytAttributedStringHost");
+
+        const timeStr = timeEl ? timeEl.textContent.trim() : "";
+        const text = textEl ? textEl.textContent.trim() : "";
+
+        if (text) {
+          segments.push({ timestamp: parseTimestamp(timeStr), text });
+        }
+      });
+      return segments;
+    }
+
+    // Fallback: older YouTube DOM (ytd-transcript-segment-renderer)
+    const legacyEls = document.querySelectorAll("ytd-transcript-segment-renderer");
+    if (legacyEls.length > 0) {
+      console.log("[FactChecker] Found", legacyEls.length, "ytd-transcript-segment-renderer elements (legacy)");
+      legacyEls.forEach((el) => {
+        const timeEl = el.querySelector(".segment-timestamp, [class*='timestamp']");
+        const textEl = el.querySelector(".segment-text, yt-formatted-string");
+
+        const timeStr = timeEl ? timeEl.textContent.trim() : "";
+        const text = textEl ? textEl.textContent.trim() : "";
+
+        if (text) {
+          segments.push({ timestamp: parseTimestamp(timeStr), text });
+        }
+      });
+    }
+
+    if (segments.length > 0) {
+      return segments;
+    }
+
+    const inferredSegments = scrapeTranscriptSegmentsFromInferredContainer();
+    if (inferredSegments.length > 0) {
+      console.log("[FactChecker] Inferred transcript container from 0:00 anchor and scraped", inferredSegments.length, "segments");
+    }
+    return inferredSegments;
+  }
+
+  function closeTranscriptPanel() {
+    // Try the X button on the engagement panel
+    const closeBtn = document.querySelector(
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'] #visibility-button button"
+    ) || document.querySelector(
+      "ytd-engagement-panel-section-list-renderer button[aria-label='Close transcript']"
+    );
+    if (closeBtn) {
+      closeBtn.click();
+      console.log("[FactChecker] Closed transcript panel");
+    }
+  }
+
+  async function fetchTranscriptSegments() {
+    console.log("[FactChecker] Opening transcript panel to scrape segments...");
+
+    const opened = await openTranscriptPanel();
+    if (!opened) {
+      throw new Error("Could not open transcript panel. Video may not have captions.");
+    }
+
+    // Wait for segments to render
+    await delay(1000);
+
+    // Scroll the transcript panel to load all segments (may be virtualized)
+    const scrollContainer = document.querySelector(
+      "ytd-transcript-renderer #body, " +
+      "ytd-transcript-renderer [class*='body'], " +
+      "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-searchable-transcript'] #content"
+    );
+    if (scrollContainer) {
+      console.log("[FactChecker] Scrolling transcript panel to load all segments...");
+      let prevHeight = 0;
+      for (let i = 0; i < 50; i++) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        await delay(200);
+        if (scrollContainer.scrollHeight === prevHeight) break;
+        prevHeight = scrollContainer.scrollHeight;
+      }
+      scrollContainer.scrollTop = 0;
+    }
+
+    const segments = scrapeTranscriptSegments();
+    console.log("[FactChecker] Scraped", segments.length, "transcript segments from DOM");
+
+    if (segments.length === 0) {
+      const all = document.querySelectorAll("transcript-segment-view-model, ytd-transcript-segment-renderer");
+      console.error("[FactChecker] 0 segments scraped. Raw segment elements found:", all.length);
+      closeTranscriptPanel();
+      throw new Error("Transcript panel opened but no segments found.");
+    }
+
+    closeTranscriptPanel();
+    return segments;
+  }
+
   function getVerdictClass(verdict) {
     const v = verdict.toLowerCase().replace(/\s+/g, "-");
     return `ytfc-verdict-${v}`;
@@ -38,28 +362,95 @@
     return `ytfc-score-${score}`;
   }
 
-  function emptyVideoAnalysis() {
-    return {
-      summary: "Analyzing video for political claims...",
-      trustworthinessScore: 3,
-      maxScore: 5,
-      trustworthinessLabel: "Analyzing",
-      politicalLean: { label: "Unknown", value: 0.5 },
-      claims: [],
-      aggregatedSources: []
-    };
-  }
-
   function cleanup() {
-    if (activeAnalysisCancel) {
-      activeAnalysisCancel();
-      activeAnalysisCancel = null;
-    }
     document.querySelectorAll(".ytfc-card, .ytfc-loading-card, .ytfc-clip-sidebar").forEach((el) => el.remove());
     const btn = document.querySelector(".ytfc-record-btn");
     if (btn) btn.remove();
     stopRecording(true);
+    clearInterval(timelineSyncInterval);
+    timelineSyncInterval = null;
     clipResults = [];
+    currentAnalysis = null;
+    currentTranscriptId = null;
+    currentTranscriptSegments = [];
+  }
+
+  function getActiveClaimsForTime(currentTime) {
+    const claims = currentAnalysis?.claims || [];
+    return claims
+      .filter((claim) => Number.isFinite(claim.startTime))
+      .map((claim) => {
+        const start = claim.startTime;
+        const end = Number.isFinite(claim.endTime) ? Math.max(claim.endTime, start) : start;
+        const paddedStart = Math.max(0, start - CLAIM_ACTIVE_PADDING_SECONDS);
+        const paddedEnd = end + CLAIM_ACTIVE_PADDING_SECONDS;
+        const inWindow = currentTime >= paddedStart && currentTime <= paddedEnd;
+        const distance = inWindow
+          ? 0
+          : Math.min(Math.abs(currentTime - paddedStart), Math.abs(currentTime - paddedEnd));
+        return { claim, start, end, inWindow, distance };
+      })
+      .filter((item) => item.inWindow)
+      .sort((a, b) => a.distance - b.distance || a.start - b.start)
+      .map((item) => item.claim);
+  }
+
+  function renderTimelineClaims() {
+    const sidebar = document.querySelector(".ytfc-clip-sidebar");
+    if (!sidebar) return;
+
+    const timeEl = sidebar.querySelector(".ytfc-timeline-now");
+    const list = sidebar.querySelector(".ytfc-timeline-list");
+    if (!timeEl || !list) return;
+
+    const currentTime = getVideoCurrentTime();
+    timeEl.textContent = formatTime(currentTime);
+
+    const activeClaims = getActiveClaimsForTime(currentTime);
+    list.innerHTML = "";
+
+    if (!currentAnalysis || !Array.isArray(currentAnalysis.claims)) {
+      list.innerHTML = `<div class="ytfc-timeline-empty">Run video analysis to load timeline claims.</div>`;
+      return;
+    }
+
+    if (activeClaims.length === 0) {
+      list.innerHTML = `<div class="ytfc-timeline-empty">No extracted claim is mapped to this moment in the video.</div>`;
+      return;
+    }
+
+    activeClaims.forEach((claim) => {
+      const card = document.createElement("div");
+      card.className = "ytfc-timeline-card";
+      const claimStartTime = Number.isFinite(claim.startTime) ? claim.startTime : 0;
+      const claimEndTime = Number.isFinite(claim.endTime) ? claim.endTime : claimStartTime;
+      card.innerHTML = `
+        <div class="ytfc-timeline-meta">
+          <button class="ytfc-timeline-ts" type="button" data-time="${claimStartTime}">${formatTime(claimStartTime)}${claimEndTime > claimStartTime ? ` - ${formatTime(claimEndTime)}` : ""}</button>
+          <span class="ytfc-verdict ${getVerdictClass(claim.verdict)}">${claim.verdict}</span>
+        </div>
+        <div class="ytfc-timeline-claim">${claim.text}</div>
+        <div class="ytfc-timeline-explanation">${claim.explanation}</div>
+        <div class="ytfc-timeline-sources">
+          ${claim.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join("")}
+        </div>
+      `;
+
+      const tsButton = card.querySelector(".ytfc-timeline-ts");
+      if (tsButton) {
+        tsButton.addEventListener("click", () => {
+          seekVideoTo(parseFloat(tsButton.dataset.time));
+        });
+      }
+
+      list.appendChild(card);
+    });
+  }
+
+  function startTimelineSync() {
+    clearInterval(timelineSyncInterval);
+    timelineSyncInterval = setInterval(renderTimelineClaims, 500);
+    renderTimelineClaims();
   }
 
   // ── Fact-Check Card Builder ──
@@ -118,13 +509,22 @@
     data.claims.forEach((claim) => {
       const li = document.createElement("li");
       li.className = "ytfc-claim";
+      const claimStartTime = Number.isFinite(claim.startTime) ? claim.startTime : 0;
+      const claimEndTime = Number.isFinite(claim.endTime) ? claim.endTime : claimStartTime;
+      const hasTimestamp = Number.isFinite(claim.startTime);
+      const detailTimestampMarkup = hasTimestamp
+        ? `<div class="ytfc-claim-detail-meta">Timestamp: <button class="ytfc-claim-detail-timestamp" type="button" data-time="${claimStartTime}" aria-label="Seek video to ${formatTime(claimStartTime)}">${formatTime(claimStartTime)}${claimEndTime > claimStartTime ? ` - ${formatTime(claimEndTime)}` : ""}</button></div>`
+        : "";
 
       li.innerHTML = `
         <div class="ytfc-claim-top">
-          <span class="ytfc-claim-text">${claim.text}</span>
+          <div class="ytfc-claim-main">
+            <span class="ytfc-claim-text">${claim.text}</span>
+          </div>
           <span class="ytfc-verdict ${getVerdictClass(claim.verdict)}">${claim.verdict}</span>
         </div>
         <div class="ytfc-claim-detail">
+          ${detailTimestampMarkup}
           <div class="ytfc-claim-explanation">${claim.explanation}</div>
           <div class="ytfc-claim-sources">
             ${claim.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join("")}
@@ -135,6 +535,14 @@
       li.addEventListener("click", () => {
         li.classList.toggle("ytfc-expanded");
       });
+
+      const detailTimestampButton = li.querySelector(".ytfc-claim-detail-timestamp");
+      if (detailTimestampButton) {
+        detailTimestampButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          seekVideoTo(parseFloat(detailTimestampButton.dataset.time));
+        });
+      }
 
       claimsList.appendChild(li);
     });
@@ -262,28 +670,10 @@
     addClipLoading();
 
     const videoUrl = window.location.href;
-    if (typeof API_streamClipAnalysis === "function") {
-      let settled = false;
-      API_streamClipAnalysis(videoUrl, recordStartTime, endTime, {
-        onDone: (event) => {
-          settled = true;
-          removeClipLoading();
-          clipResults.unshift(event.result);
-          renderClipSidebar();
-        },
-        onConnectionError: async () => {
-          if (settled) return;
-          settled = true;
-          const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
-          removeClipLoading();
-          clipResults.unshift(result);
-          renderClipSidebar();
-        }
-      });
-      return;
-    }
+    console.log("[FactChecker] Analyzing clip:", { start: recordStartTime, end: endTime });
 
-    const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
+    const result = await API_analyzeClip(videoUrl, recordStartTime, endTime, currentTranscriptId);
+    console.log("[FactChecker] Clip result:", result.verdict);
 
     removeClipLoading();
     clipResults.unshift(result);
@@ -298,6 +688,15 @@
     const sidebar = document.createElement("div");
     sidebar.className = "ytfc-clip-sidebar";
     sidebar.innerHTML = `
+      <div class="ytfc-timeline-panel">
+        <div class="ytfc-timeline-header">
+          <span class="ytfc-timeline-title">Current Claim Context</span>
+          <span class="ytfc-timeline-now">0:00</span>
+        </div>
+        <div class="ytfc-timeline-list">
+          <div class="ytfc-timeline-empty">Run video analysis to load timeline claims.</div>
+        </div>
+      </div>
       <div class="ytfc-clip-sidebar-header">
         <span class="ytfc-clip-sidebar-title">Clip Fact-Checks</span>
         <span class="ytfc-clip-count">0 clips</span>
@@ -311,6 +710,8 @@
     if (secondary) {
       secondary.insertBefore(sidebar, secondary.firstChild);
     }
+
+    renderTimelineClaims();
   }
 
   function addClipLoading() {
@@ -366,8 +767,7 @@
       `;
       card.querySelectorAll(".ytfc-clip-ts").forEach((ts) => {
         ts.addEventListener("click", () => {
-          const video = document.querySelector("video.html5-main-video");
-          if (video) video.currentTime = parseFloat(ts.dataset.time);
+          seekVideoTo(parseFloat(ts.dataset.time));
         });
       });
 
@@ -392,10 +792,17 @@
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     const tags = metaKeywords ? metaKeywords.content : "";
 
+    console.log("[FactChecker] Extracted metadata:", {
+      title: title.substring(0, 80),
+      descriptionLength: description.length,
+      tagsLength: tags.length
+    });
+
     // Step 1: Check if political
     injectLoadingCard();
 
     const politicalCheck = await API_checkIfPolitical({ title, description, tags });
+    console.log("[FactChecker] Political check result:", politicalCheck);
 
     if (!politicalCheck.isPolitical) {
       document.querySelectorAll(".ytfc-loading-card").forEach((el) => el.remove());
@@ -403,51 +810,44 @@
       return;
     }
 
-    // Step 2: Full analysis
-    if (typeof API_streamFullAnalysis === "function") {
-      const analysis = emptyVideoAnalysis();
-      let settled = false;
+    console.log("[FactChecker] Video is political, proceeding with transcript extraction...");
 
-      activeAnalysisCancel = API_streamFullAnalysis(window.location.href, {
-        onClaimFinal: (event) => {
-          analysis.claims[event.claimIndex] = event.claim;
-          injectFactCheckCard(analysis);
-        },
-        onSummaryUpdated: (event) => {
-          analysis.summary = event.summary;
-          analysis.trustworthinessScore = event.trustworthinessScore;
-          analysis.maxScore = event.maxScore;
-          analysis.trustworthinessLabel = event.trustworthinessLabel;
-          analysis.politicalLean = event.politicalLean;
-          analysis.aggregatedSources = event.aggregatedSources;
-          injectFactCheckCard(analysis);
-        },
-        onDone: (event) => {
-          settled = true;
-          activeAnalysisCancel = null;
-          injectFactCheckCard(event.result);
-        },
-        onStreamError: (event) => {
-          console.warn("[FactChecker] recoverable stream error:", event);
-        },
-        onConnectionError: async () => {
-          if (settled) return;
-          settled = true;
-          activeAnalysisCancel = null;
-          const fallback = await API_getFullAnalysis(window.location.href);
-          injectFactCheckCard(fallback);
-        }
+    try {
+      currentTranscriptSegments = await fetchTranscriptSegments();
+      console.log("[FactChecker] Transcript extracted:", currentTranscriptSegments.length, "segments");
+      const upload = await API_uploadTranscript(window.location.href, currentTranscriptSegments);
+      currentTranscriptId = upload.transcriptId;
+      console.log("[FactChecker] Transcript uploaded:", {
+        transcriptId: upload.transcriptId,
+        chunkCount: upload.chunkCount,
+        totalCharacters: upload.totalCharacters
       });
-
-      injectFactCheckCard(analysis);
-    } else {
-      const analysis = await API_getFullAnalysis(window.location.href);
-      injectFactCheckCard(analysis);
+    } catch (error) {
+      currentTranscriptId = null;
+      currentTranscriptSegments = [];
+      console.error("[FactChecker] Transcript extraction/upload failed:", error.message || error);
     }
+
+    // Step 2: Full analysis
+    console.log("[FactChecker] Starting full analysis...", {
+      url: window.location.href,
+      transcriptId: currentTranscriptId,
+      hasTranscript: currentTranscriptSegments.length > 0
+    });
+
+    const analysis = await API_getFullAnalysis(
+      window.location.href,
+      currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
+      currentTranscriptId
+    );
+    console.log("[FactChecker] Analysis result — claims:", analysis.claims?.length || 0);
+    currentAnalysis = analysis;
+    injectFactCheckCard(analysis);
 
     // Step 3: Inject record button & sidebar
     injectRecordButton();
     ensureClipSidebar();
+    startTimelineSync();
   }
 
   // ── YouTube SPA Navigation Detection ──
@@ -479,12 +879,15 @@
   const urlObserver = new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
+      console.log("[FactChecker] URL changed:", lastUrl);
       if (lastUrl.includes("youtube.com/watch")) {
         // Wait for the page elements to render
-        waitForElement("#middle-row").then(() => {
+        waitForElement("#middle-row").then((el) => {
+          console.log("[FactChecker] #middle-row found:", !!el, "— scheduling initForVideo");
           setTimeout(initForVideo, 500);
         });
       } else {
+        console.log("[FactChecker] Not a watch page, cleaning up");
         cleanup();
         currentVideoId = null;
       }

@@ -8,10 +8,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ.get("OPENROUTER_API_KEY"),
-)
+def _get_client():
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        raise RuntimeError("OPENROUTER_API_KEY is not set. Add it to your .env file.")
+    return AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=key,
+    )
 
 # --- Configuration: Source Trust and Bias Scores ---
 # Trust (T): 0.0 to 1.0 (1.0 = highly reliable)
@@ -117,7 +121,7 @@ async def get_nli_probabilities(claim: str, evidence: str) -> NLIResult:
     user_prompt = f"Claim: {claim}\n\nEvidence: {evidence}"
     
     try:
-        response = await client.chat.completions.create(
+        response = await _get_client().chat.completions.create(
             model="google/gemini-2.5-flash",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -172,7 +176,7 @@ async def extract_evidence_items(markdown_text: str) -> List[Dict[str, str]]:
     """
     
     try:
-        response = await client.chat.completions.create(
+        response = await _get_client().chat.completions.create(
             model="google/gemini-2.5-flash",
             messages=[
                 {"role": "system", "content": system_prompt},

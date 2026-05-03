@@ -1,5 +1,14 @@
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url && tab.url && tab.url.includes("youtube.com/watch")) {
-    chrome.tabs.sendMessage(tabId, { type: "URL_CHANGED", url: tab.url });
+    chrome.tabs.sendMessage(
+      tabId,
+      { type: "URL_CHANGED", url: tab.url },
+      () => {
+        const err = chrome.runtime.lastError;
+        if (err) {
+          console.debug("[Background] URL_CHANGED message skipped:", err.message);
+        }
+      }
+    );
   }
 });

@@ -156,9 +156,18 @@
   gap: 10px;
 }
 
+.ytfc-claim-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
 .ytfc-claim-text {
   font-size: 14px;
   flex: 1;
+  min-width: 0;
 }
 
 .ytfc-verdict {
@@ -211,6 +220,23 @@
   font-size: 13px;
   color: #aaa;
   margin-bottom: 8px;
+}
+
+.ytfc-claim-detail-meta {
+  font-size: 12px;
+  color: #8fb9d6;
+  margin-bottom: 8px;
+}
+
+.ytfc-claim-detail-timestamp {
+  border: 0;
+  background: transparent;
+  color: #7cc8ff;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .ytfc-claim-sources {
@@ -337,6 +363,98 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.ytfc-timeline-panel {
+  border-bottom: 1px solid #333;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(62, 166, 255, 0.08), rgba(26, 26, 26, 0));
+}
+
+.ytfc-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ytfc-timeline-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ytfc-timeline-now {
+  font-size: 12px;
+  color: #8fb9d6;
+  background: rgba(62, 166, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.ytfc-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ytfc-timeline-card {
+  background: #222;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.ytfc-timeline-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ytfc-timeline-ts {
+  border: 0;
+  background: transparent;
+  color: #7cc8ff;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ytfc-timeline-claim {
+  font-size: 14px;
+  color: #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.ytfc-timeline-explanation {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.ytfc-timeline-sources {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ytfc-timeline-sources a {
+  font-size: 11px;
+  color: #3ea6ff;
+  text-decoration: none;
+  background: rgba(62, 166, 255, 0.1);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.ytfc-timeline-empty {
+  font-size: 12px;
+  color: #999;
+  padding: 8px 4px;
 }
 
 .ytfc-clip-sidebar-header {

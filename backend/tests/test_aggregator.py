@@ -159,6 +159,8 @@ def test_aggregate_builds_one_frontend_claim_per_annotation() -> None:
     response = aggregate_annotations(annotations)
     assert len(response.claims) == 2
     assert response.claims[0].text == "Claim A"
+    assert response.claims[0].startTime == 0.0
+    assert response.claims[0].endTime == 5.0
     assert response.claims[0].verdict == "True"
     assert response.claims[1].verdict == "False"
     # ID format preserves Kevin's "claim-N" convention:

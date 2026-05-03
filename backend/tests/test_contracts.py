@@ -133,6 +133,20 @@ def test_analyze_video_response_uses_frontend_field_names() -> None:
     assert expected_keys <= set(payload.keys())
 
 
+def test_frontend_claim_serializes_timestamp_fields() -> None:
+    claim = FrontendClaim(
+        id="claim-1",
+        text="Example claim",
+        startTime=12.0,
+        endTime=18.5,
+        verdict="True",
+        explanation="Example explanation",
+    )
+    payload = claim.model_dump()
+    assert payload["startTime"] == 12.0
+    assert payload["endTime"] == 18.5
+
+
 # ---------------------------------------------------------------------------
 # 2. Adapter shape
 # ---------------------------------------------------------------------------

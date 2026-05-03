@@ -6,11 +6,14 @@ from .sources import get_sources_for_domain
 # Load the environment variables from your .env file
 load_dotenv()
 
-# Initialize the OpenAI client pointing to OpenRouter once at module level
-client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ.get("OPENROUTER_API_KEY"),
-)
+def _get_client():
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        raise RuntimeError("OPENROUTER_API_KEY is not set. Add it to your .env file.")
+    return AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=key,
+    )
 
 async def run_domain_agent(domain: str, specialty_desc: str, source_examples: str, claim: str) -> str:
     """
@@ -32,7 +35,7 @@ async def run_domain_agent(domain: str, specialty_desc: str, source_examples: st
         """
         
         try:
-            fc_response = await client.chat.completions.create(
+            fc_response = await _get_client().chat.completions.create(
                 model="google/gemini-2.5-flash", # OpenRouter model name
                 messages=[
                     {"role": "system", "content": fact_check_system_instruction},
@@ -74,7 +77,7 @@ async def run_domain_agent(domain: str, specialty_desc: str, source_examples: st
     prompt = f"Here is the claim you need to research:\n\"{claim}\"\n\nPlease provide the gathered evidence in Markdown."
     
     try:
-        response = await client.chat.completions.create(
+        response = await _get_client().chat.completions.create(
             model="google/gemini-2.5-flash", # OpenRouter model name
             messages=[
                 {"role": "system", "content": system_instruction},

@@ -16,31 +16,72 @@ async function API_checkIfPolitical(metadata) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(metadata)
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error("[API] check-political HTTP error:", response.status, body);
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const result = await response.json();
+    console.log("[API] checkIfPolitical result:", result);
+    return result;
   } catch (e) {
-    console.error("[API] check-political failed:", e);
+    console.error("[API] check-political failed:", e.message || e, "— falling back to isPolitical: true");
     // Fallback to true so we don't break the pipeline on error during dev
     return { isPolitical: true };
   }
 }
 
 /**
- * Gets the full fact-check analysis for a political video.
- * Endpoint: POST /api/analyze-video { url }
+ * Uploads browser-extracted transcript segments to the local backend.
+ * Endpoint: POST /api/transcripts { url, transcript }
  */
-async function API_getFullAnalysis(videoUrl) {
+async function API_uploadTranscript(videoUrl, transcript) {
+  console.log("[API] uploadTranscript called:", {
+    videoUrl,
+    segmentCount: Array.isArray(transcript) ? transcript.length : 0
+  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/transcripts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: videoUrl, transcript })
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error("[API] uploadTranscript HTTP error:", response.status, body);
+      throw new Error(`HTTP ${response.status}: ${body}`);
+    }
+    const result = await response.json();
+    console.log("[API] uploadTranscript success:", result);
+    return result;
+  } catch (e) {
+    console.error("[API] uploadTranscript failed:", e.message || e);
+    throw e;
+  }
+}
+
+/**
+ * Gets the full fact-check analysis for a political video.
+ * Endpoint: POST /api/analyze-video { url, transcript? }
+ */
+async function API_getFullAnalysis(videoUrl, transcript = null, transcriptId = null) {
   console.log("[API] getFullAnalysis called with:", videoUrl);
   try {
     const response = await fetch(`${API_BASE_URL}/analyze-video`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: videoUrl })
+      body: JSON.stringify({ url: videoUrl, transcript, transcriptId })
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error("[API] analyze-video HTTP error:", response.status, body);
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const result = await response.json();
+    console.log("[API] getFullAnalysis result — claims:", result.claims?.length || 0);
+    return result;
   } catch (e) {
-    console.error("[API] analyze-video failed:", e);
+    console.error("[API] analyze-video failed:", e.message || e, "— returning error fallback");
     // Return empty fallback on error
     return {
       summary: "Error connecting to backend.",
@@ -55,49 +96,10 @@ async function API_getFullAnalysis(videoUrl) {
 }
 
 /**
- * Streams full fact-check analysis events for a political video.
- * Endpoint: GET /api/analyze-video/stream?url=...
- */
-function API_streamFullAnalysis(videoUrl, handlers = {}) {
-  const params = new URLSearchParams({ url: videoUrl });
-  const source = new EventSource(`${API_BASE_URL}/analyze-video/stream?${params.toString()}`);
-
-  const parse = (event) => JSON.parse(event.data);
-  const on = (name, handlerName) => {
-    source.addEventListener(name, (event) => {
-      if (handlers[handlerName]) handlers[handlerName](parse(event));
-    });
-  };
-
-  on("run_started", "onRunStarted");
-  on("transcript_ready", "onTranscriptReady");
-  on("claim_extracted", "onClaimExtracted");
-  on("claim_routed", "onClaimRouted");
-  on("agent_result", "onAgentResult");
-  on("claim_final", "onClaimFinal");
-  on("summary_updated", "onSummaryUpdated");
-
-  source.addEventListener("done", (event) => {
-    if (handlers.onDone) handlers.onDone(parse(event));
-    source.close();
-  });
-
-  source.addEventListener("error", (event) => {
-    if (event.data && handlers.onStreamError) {
-      handlers.onStreamError(parse(event));
-      return;
-    }
-    if (handlers.onConnectionError) handlers.onConnectionError(event);
-  });
-
-  return () => source.close();
-}
-
-/**
  * Analyzes a manually-recorded clip.
- * Endpoint: POST /api/analyze-clip { url, startTime, endTime, captions }
+ * Endpoint: POST /api/analyze-clip { url, startTime, endTime, captions, transcriptId? }
  */
-async function API_analyzeClip(videoUrl, startTime, endTime) {
+async function API_analyzeClip(videoUrl, startTime, endTime, transcriptId = null) {
   console.log("[API] analyzeClip called:", { videoUrl, startTime, endTime });
   try {
     const response = await fetch(`${API_BASE_URL}/analyze-clip`, {
@@ -107,7 +109,8 @@ async function API_analyzeClip(videoUrl, startTime, endTime) {
         url: videoUrl,
         startTime: startTime,
         endTime: endTime,
-        captions: "" // Frontend doesn't pull captions yet
+        captions: "",
+        transcriptId
       })
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -125,43 +128,3 @@ async function API_analyzeClip(videoUrl, startTime, endTime) {
   }
 }
 
-/**
- * Streams fact-check analysis for a manually-recorded clip.
- * Endpoint: GET /api/analyze-clip/stream?url=...&startTime=...&endTime=...
- */
-function API_streamClipAnalysis(videoUrl, startTime, endTime, handlers = {}) {
-  const params = new URLSearchParams({
-    url: videoUrl,
-    startTime: String(startTime),
-    endTime: String(endTime),
-    captions: ""
-  });
-  const source = new EventSource(`${API_BASE_URL}/analyze-clip/stream?${params.toString()}`);
-
-  const parse = (event) => JSON.parse(event.data);
-  const on = (name, handlerName) => {
-    source.addEventListener(name, (event) => {
-      if (handlers[handlerName]) handlers[handlerName](parse(event));
-    });
-  };
-
-  on("claim_extracted", "onClaimExtracted");
-  on("claim_routed", "onClaimRouted");
-  on("agent_result", "onAgentResult");
-  on("claim_final", "onClaimFinal");
-
-  source.addEventListener("done", (event) => {
-    if (handlers.onDone) handlers.onDone(parse(event));
-    source.close();
-  });
-
-  source.addEventListener("error", (event) => {
-    if (event.data && handlers.onStreamError) {
-      handlers.onStreamError(parse(event));
-      return;
-    }
-    if (handlers.onConnectionError) handlers.onConnectionError(event);
-  });
-
-  return () => source.close();
-}

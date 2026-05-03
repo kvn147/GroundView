@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Automatically fact-checks political claims in YouTube videos",
   "permissions": ["activeTab"],
+  "host_permissions": [
+    "*://www.youtube.com/*",
+    "http://localhost:8000/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],

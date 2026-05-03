@@ -1,32 +1,78 @@
-import json
-import asyncio
-from youtube_transcript_api import YouTubeTranscriptApi
+"""Transcript normalization and chunking.
+
+YouTube blocks the server-side transcript API often enough that the
+backend now expects the Chrome extension to extract captions in the
+browser and send them along with the analysis request.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 CHUNK_SECONDS = 60
 OVERLAP_SECONDS = 10
 
 
-def _extract_video_id(url: str) -> str:
-    if "v=" in url:
-        return url.split("v=")[1].split("&")[0]
-    if "youtu.be/" in url:
-        return url.split("youtu.be/")[1].split("?")[0]
-    if "shorts/" in url:
-        return url.split("shorts/")[1].split("?")[0].split("&")[0]
-    raise ValueError(f"Could not extract video ID from URL: {url}")
+TranscriptInput = str | Sequence[Mapping[str, Any]]
 
 
-from youtube_transcript_api import YouTubeTranscriptApi
+def _coerce_timestamp(segment: Mapping[str, Any]) -> float:
+    for key in ("timestamp", "start", "startTime", "offset"):
+        value = segment.get(key)
+        if value is None:
+            continue
+        try:
+            return round(float(value), 2)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
 
-async def get_transcript(youtube_url: str) -> list[dict]:
-    video_id = _extract_video_id(youtube_url)
-    api = YouTubeTranscriptApi()
-    fetched = await asyncio.to_thread(api.fetch, video_id)
-    normalized = [
-        {"timestamp": round(s.start, 2), "text": s.text}
-        for s in fetched
-    ]
-    return _chunk_segments(normalized)
+
+def _normalize_segments(transcript: TranscriptInput) -> list[dict]:
+    if isinstance(transcript, str):
+        text = transcript.strip()
+        return [{"timestamp": 0.0, "text": text}] if text else []
+
+    normalized = []
+    for segment in transcript:
+        text = str(segment.get("text", "")).strip()
+        if not text:
+            continue
+        normalized.append(
+            {
+                "timestamp": _coerce_timestamp(segment),
+                "text": " ".join(text.split()),
+            }
+        )
+
+    return sorted(normalized, key=lambda item: item["timestamp"])
+
+
+def normalize_transcript_segments(transcript: TranscriptInput) -> list[dict]:
+    return _normalize_segments(transcript)
+
+
+def chunk_transcript_segments(segments: list[dict]) -> list[dict]:
+    return _chunk_segments(segments)
+
+
+def normalize_transcript(transcript: TranscriptInput) -> list[dict]:
+    return chunk_transcript_segments(normalize_transcript_segments(transcript))
+
+
+async def get_transcript(
+    youtube_url: str,
+    transcript: TranscriptInput | None = None,
+) -> list[dict]:
+    if transcript is None:
+        raise RuntimeError(
+            "No transcript was supplied. The Chrome extension must send "
+            "caption text extracted from the YouTube page."
+        )
+
+    return normalize_transcript(transcript)
+
 
 def _chunk_segments(segments: list[dict]) -> list[dict]:
     if not segments:
@@ -39,13 +85,11 @@ def _chunk_segments(segments: list[dict]) -> list[dict]:
 
     for seg in segments:
         if seg["timestamp"] - chunk_start >= CHUNK_SECONDS:
-            chunks.append({
-                "timestamp": chunk_ts,
-                "text": " ".join(chunk_texts)
-            })
+            chunks.append({"timestamp": chunk_ts, "text": " ".join(chunk_texts)})
             overlap_ts = seg["timestamp"] - OVERLAP_SECONDS
             chunk_texts = [
-                s["text"] for s in segments
+                s["text"]
+                for s in segments
                 if overlap_ts <= s["timestamp"] <= seg["timestamp"]
             ]
             chunk_start = seg["timestamp"]
@@ -54,9 +98,6 @@ def _chunk_segments(segments: list[dict]) -> list[dict]:
             chunk_texts.append(seg["text"])
 
     if chunk_texts:
-        chunks.append({
-            "timestamp": chunk_ts,
-            "text": " ".join(chunk_texts)
-        })
+        chunks.append({"timestamp": chunk_ts, "text": " ".join(chunk_texts)})
 
     return chunks

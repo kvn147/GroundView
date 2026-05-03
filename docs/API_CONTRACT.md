@@ -32,7 +32,29 @@ Local Development: `http://localhost:8000/api`
 ---
 
 ## 2. Full Video Analysis
-**Streaming Endpoint:** `GET /analyze-video/stream?url=...`
+**Transcript Upload Endpoint:** `POST /transcripts`
+**Purpose:** Stores browser-extracted YouTube caption segments and returns a `transcriptId` that can be passed to streaming requests. This avoids server-side YouTube transcript fetching.
+
+**Request Body:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=...",
+  "transcript": [
+    { "timestamp": 0.0, "text": "Caption text..." }
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "transcriptId": "tr-abc",
+  "chunkCount": 4,
+  "totalCharacters": 12000
+}
+```
+
+**Streaming Endpoint:** `GET /analyze-video/stream?url=...&transcriptId=...`
 **Purpose:** Streams the end-to-end extraction and fact-checking pipeline as named Server-Sent Events. The stream emits progress events such as `run_started`, `transcript_ready`, `claim_extracted`, `claim_routed`, `agent_result`, `claim_final`, `summary_updated`, and final `done`.
 
 **Final `done` payload:**
@@ -63,7 +85,11 @@ Local Development: `http://localhost:8000/api`
 **Request Body:**
 ```json
 {
-  "url": "https://www.youtube.com/watch?v=..."
+  "url": "https://www.youtube.com/watch?v=...",
+  "transcript": [
+    { "timestamp": 0.0, "text": "Caption text..." }
+  ],
+  "transcriptId": "tr-abc"
 }
 ```
 
@@ -95,7 +121,7 @@ Local Development: `http://localhost:8000/api`
 ---
 
 ## 3. Manual Clip Analysis
-**Streaming Endpoint:** `GET /analyze-clip/stream?url=...&startTime=120.5&endTime=180.0&captions=...`
+**Streaming Endpoint:** `GET /analyze-clip/stream?url=...&startTime=120.5&endTime=180.0&captions=...&transcriptId=...`
 **Purpose:** Streams analysis for a bounded timestamp window. The final `done.result` matches the clip response shape below.
 
 **Endpoint:** `POST /analyze-clip`
@@ -107,7 +133,8 @@ Local Development: `http://localhost:8000/api`
   "url": "https://www.youtube.com/watch?v=...",
   "startTime": 120.5,
   "endTime": 180.0,
-  "captions": "Optional manual caption override"
+  "captions": "Optional manual caption override",
+  "transcriptId": "tr-abc"
 }
 ```
 
