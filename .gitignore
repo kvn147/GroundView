@@ -1,0 +1,35 @@
+# Personal Claude Code workspace — per-developer scratchpad and memory.
+# Each teammate may have their own .claude/ directory; none are shared.
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.next/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Pipeline artifacts
+clips/videos/
+backend/eval/reports/
+*.cache
