@@ -11,3 +11,5 @@ joblib
 numpy
 pandas
 pytest
+pytest-asyncio
+pydantic
