@@ -26,16 +26,35 @@ async function API_checkIfPolitical(metadata) {
 }
 
 /**
- * Gets the full fact-check analysis for a political video.
- * Endpoint: POST /api/analyze-video { url }
+ * Uploads browser-extracted transcript segments to the local backend.
+ * Endpoint: POST /api/transcripts { url, transcript }
  */
-async function API_getFullAnalysis(videoUrl) {
+async function API_uploadTranscript(videoUrl, transcript) {
+  console.log("[API] uploadTranscript called:", {
+    videoUrl,
+    segmentCount: Array.isArray(transcript) ? transcript.length : 0
+  });
+
+  const response = await fetch(`${API_BASE_URL}/transcripts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: videoUrl, transcript })
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+}
+
+/**
+ * Gets the full fact-check analysis for a political video.
+ * Endpoint: POST /api/analyze-video { url, transcript? }
+ */
+async function API_getFullAnalysis(videoUrl, transcript = null, transcriptId = null) {
   console.log("[API] getFullAnalysis called with:", videoUrl);
   try {
     const response = await fetch(`${API_BASE_URL}/analyze-video`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: videoUrl })
+      body: JSON.stringify({ url: videoUrl, transcript, transcriptId })
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
@@ -56,10 +75,16 @@ async function API_getFullAnalysis(videoUrl) {
 
 /**
  * Streams full fact-check analysis events for a political video.
- * Endpoint: GET /api/analyze-video/stream?url=...
+ * Endpoint: GET /api/analyze-video/stream?url=...&transcriptId=...
  */
-function API_streamFullAnalysis(videoUrl, handlers = {}) {
+function API_streamFullAnalysis(videoUrl, transcriptId = null, handlers = {}) {
+  if (typeof transcriptId === "object" && transcriptId !== null) {
+    handlers = transcriptId;
+    transcriptId = null;
+  }
+
   const params = new URLSearchParams({ url: videoUrl });
+  if (transcriptId) params.set("transcriptId", transcriptId);
   const source = new EventSource(`${API_BASE_URL}/analyze-video/stream?${params.toString()}`);
 
   const parse = (event) => JSON.parse(event.data);
@@ -95,9 +120,9 @@ function API_streamFullAnalysis(videoUrl, handlers = {}) {
 
 /**
  * Analyzes a manually-recorded clip.
- * Endpoint: POST /api/analyze-clip { url, startTime, endTime, captions }
+ * Endpoint: POST /api/analyze-clip { url, startTime, endTime, captions, transcriptId? }
  */
-async function API_analyzeClip(videoUrl, startTime, endTime) {
+async function API_analyzeClip(videoUrl, startTime, endTime, transcriptId = null) {
   console.log("[API] analyzeClip called:", { videoUrl, startTime, endTime });
   try {
     const response = await fetch(`${API_BASE_URL}/analyze-clip`, {
@@ -107,7 +132,8 @@ async function API_analyzeClip(videoUrl, startTime, endTime) {
         url: videoUrl,
         startTime: startTime,
         endTime: endTime,
-        captions: "" // Frontend doesn't pull captions yet
+        captions: "",
+        transcriptId
       })
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -127,15 +153,21 @@ async function API_analyzeClip(videoUrl, startTime, endTime) {
 
 /**
  * Streams fact-check analysis for a manually-recorded clip.
- * Endpoint: GET /api/analyze-clip/stream?url=...&startTime=...&endTime=...
+ * Endpoint: GET /api/analyze-clip/stream?url=...&startTime=...&endTime=...&transcriptId=...
  */
-function API_streamClipAnalysis(videoUrl, startTime, endTime, handlers = {}) {
+function API_streamClipAnalysis(videoUrl, startTime, endTime, transcriptId = null, handlers = {}) {
+  if (typeof transcriptId === "object" && transcriptId !== null) {
+    handlers = transcriptId;
+    transcriptId = null;
+  }
+
   const params = new URLSearchParams({
     url: videoUrl,
     startTime: String(startTime),
     endTime: String(endTime),
     captions: ""
   });
+  if (transcriptId) params.set("transcriptId", transcriptId);
   const source = new EventSource(`${API_BASE_URL}/analyze-clip/stream?${params.toString()}`);
 
   const parse = (event) => JSON.parse(event.data);

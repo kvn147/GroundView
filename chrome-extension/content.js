@@ -10,6 +10,8 @@
   let recordTimerInterval = null;
   let clipResults = [];
   let activeAnalysisCancel = null;
+  let currentTranscriptId = null;
+  let currentTranscriptSegments = [];
 
   // ── Helpers ──
 
@@ -27,6 +29,134 @@
   function getVideoCurrentTime() {
     const video = document.querySelector("video.html5-main-video");
     return video ? video.currentTime : 0;
+  }
+
+  function extractBalancedJson(source, marker) {
+    const markerIndex = source.indexOf(marker);
+    if (markerIndex === -1) return null;
+
+    const start = source.indexOf("{", markerIndex);
+    if (start === -1) return null;
+
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+
+    for (let i = start; i < source.length; i += 1) {
+      const char = source[i];
+
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === "\\") {
+          escaped = true;
+        } else if (char === "\"") {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (char === "\"") {
+        inString = true;
+      } else if (char === "{") {
+        depth += 1;
+      } else if (char === "}") {
+        depth -= 1;
+        if (depth === 0) return source.slice(start, i + 1);
+      }
+    }
+
+    return null;
+  }
+
+  function getPlayerResponseFromPage() {
+    const scripts = Array.from(document.querySelectorAll("script"));
+    for (const script of scripts) {
+      const text = script.textContent || "";
+      if (!text.includes("ytInitialPlayerResponse")) continue;
+
+      const rawJson = extractBalancedJson(text, "ytInitialPlayerResponse");
+      if (!rawJson) continue;
+
+      try {
+        return JSON.parse(rawJson);
+      } catch (error) {
+        console.warn("[FactChecker] Failed to parse player response:", error);
+      }
+    }
+
+    return null;
+  }
+
+  function chooseCaptionTrack(captionTracks) {
+    if (!Array.isArray(captionTracks) || captionTracks.length === 0) return null;
+
+    const isEnglish = (track) => {
+      const code = track.languageCode || "";
+      const label = track.name && track.name.simpleText ? track.name.simpleText : "";
+      return code.toLowerCase().startsWith("en") || /english/i.test(label);
+    };
+    const isManual = (track) => track.kind !== "asr";
+
+    return (
+      captionTracks.find((track) => isEnglish(track) && isManual(track)) ||
+      captionTracks.find(isEnglish) ||
+      captionTracks.find(isManual) ||
+      captionTracks[0]
+    );
+  }
+
+  function parseJson3Transcript(payload) {
+    const events = Array.isArray(payload.events) ? payload.events : [];
+    return events
+      .filter((event) => Array.isArray(event.segs))
+      .map((event) => ({
+        timestamp: (event.tStartMs || 0) / 1000,
+        text: event.segs.map((seg) => seg.utf8 || "").join("").trim()
+      }))
+      .filter((segment) => segment.text);
+  }
+
+  function parseXmlTranscript(xmlText) {
+    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+    return Array.from(doc.querySelectorAll("text"))
+      .map((node) => ({
+        timestamp: Number.parseFloat(node.getAttribute("start") || "0"),
+        text: (node.textContent || "").trim()
+      }))
+      .filter((segment) => segment.text);
+  }
+
+  async function fetchTranscriptSegments() {
+    const playerResponse = getPlayerResponseFromPage();
+    const captionTracks =
+      playerResponse &&
+      playerResponse.captions &&
+      playerResponse.captions.playerCaptionsTracklistRenderer &&
+      playerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
+
+    const track = chooseCaptionTrack(captionTracks);
+    if (!track || !track.baseUrl) {
+      throw new Error("No YouTube caption track found on this page.");
+    }
+
+    const url = new URL(track.baseUrl);
+    url.searchParams.set("fmt", "json3");
+
+    const response = await fetch(url.toString(), { credentials: "include" });
+    if (!response.ok) throw new Error(`Caption fetch failed with ${response.status}`);
+
+    const body = await response.text();
+    try {
+      const json = JSON.parse(body);
+      const segments = parseJson3Transcript(json);
+      if (segments.length > 0) return segments;
+    } catch (_error) {
+      const segments = parseXmlTranscript(body);
+      if (segments.length > 0) return segments;
+    }
+
+    throw new Error("Caption track did not contain readable transcript text.");
   }
 
   function getVerdictClass(verdict) {
@@ -60,6 +190,8 @@
     if (btn) btn.remove();
     stopRecording(true);
     clipResults = [];
+    currentTranscriptId = null;
+    currentTranscriptSegments = [];
   }
 
   // ── Fact-Check Card Builder ──
@@ -264,7 +396,7 @@
     const videoUrl = window.location.href;
     if (typeof API_streamClipAnalysis === "function") {
       let settled = false;
-      API_streamClipAnalysis(videoUrl, recordStartTime, endTime, {
+      API_streamClipAnalysis(videoUrl, recordStartTime, endTime, currentTranscriptId, {
         onDone: (event) => {
           settled = true;
           removeClipLoading();
@@ -274,7 +406,7 @@
         onConnectionError: async () => {
           if (settled) return;
           settled = true;
-          const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
+          const result = await API_analyzeClip(videoUrl, recordStartTime, endTime, currentTranscriptId);
           removeClipLoading();
           clipResults.unshift(result);
           renderClipSidebar();
@@ -283,7 +415,7 @@
       return;
     }
 
-    const result = await API_analyzeClip(videoUrl, recordStartTime, endTime);
+    const result = await API_analyzeClip(videoUrl, recordStartTime, endTime, currentTranscriptId);
 
     removeClipLoading();
     clipResults.unshift(result);
@@ -403,12 +535,23 @@
       return;
     }
 
+    try {
+      currentTranscriptSegments = await fetchTranscriptSegments();
+      const upload = await API_uploadTranscript(window.location.href, currentTranscriptSegments);
+      currentTranscriptId = upload.transcriptId;
+      console.log("[FactChecker] Transcript uploaded:", upload);
+    } catch (error) {
+      currentTranscriptId = null;
+      currentTranscriptSegments = [];
+      console.error("[FactChecker] Could not extract/upload transcript:", error);
+    }
+
     // Step 2: Full analysis
     if (typeof API_streamFullAnalysis === "function") {
       const analysis = emptyVideoAnalysis();
       let settled = false;
 
-      activeAnalysisCancel = API_streamFullAnalysis(window.location.href, {
+      activeAnalysisCancel = API_streamFullAnalysis(window.location.href, currentTranscriptId, {
         onClaimFinal: (event) => {
           analysis.claims[event.claimIndex] = event.claim;
           injectFactCheckCard(analysis);
@@ -434,14 +577,22 @@
           if (settled) return;
           settled = true;
           activeAnalysisCancel = null;
-          const fallback = await API_getFullAnalysis(window.location.href);
+          const fallback = await API_getFullAnalysis(
+            window.location.href,
+            currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
+            currentTranscriptId
+          );
           injectFactCheckCard(fallback);
         }
       });
 
       injectFactCheckCard(analysis);
     } else {
-      const analysis = await API_getFullAnalysis(window.location.href);
+      const analysis = await API_getFullAnalysis(
+        window.location.href,
+        currentTranscriptSegments.length > 0 ? currentTranscriptSegments : null,
+        currentTranscriptId
+      );
       injectFactCheckCard(analysis);
     }
 

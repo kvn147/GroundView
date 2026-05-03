@@ -130,6 +130,43 @@ async def test_analyze_video_events_emit_incremental_contract(mocked_pipeline) -
 
 
 @pytest.mark.asyncio
+async def test_analyze_video_events_process_all_transcript_chunks(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    async def fake_get_transcript(url: str):
+        return [
+            {"text": f"Claim from minute {idx}.", "timestamp": float(idx * 60)}
+            for idx in range(6)
+        ]
+
+    async def fake_extract_claims(text: str, timestamp: float):
+        return [
+            {
+                "claim": text,
+                "raw_quote": text,
+                "timestamp": timestamp,
+            }
+        ]
+
+    monkeypatch.setattr(video, "get_transcript", fake_get_transcript)
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+
+    events = [event async for event in video.analyze_video_events("https://youtu.be/x")]
+    transcript_ready = next(
+        event for event in events if event["event"] == "transcript_ready"
+    )
+    claim_final_events = [
+        event for event in events if event["event"] == "claim_final"
+    ]
+
+    assert transcript_ready["payload"]["chunkCount"] == 6
+    assert transcript_ready["payload"]["processedChunkLimit"] == 6
+    assert len(claim_final_events) == 6
+    assert events[-1]["payload"]["result"]["claims"][-1]["text"] == "Claim from minute 5."
+
+
+@pytest.mark.asyncio
 async def test_sync_video_endpoint_consumes_stream_result(mocked_pipeline) -> None:
     response = await video.analyze_video(
         video.AnalyzeVideoRequest(url="https://youtu.be/x")
