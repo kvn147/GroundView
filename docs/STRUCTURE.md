@@ -1,6 +1,6 @@
 # STRUCTURE.md — Current Repo State
 
-**Status:** Snapshot of what's actually on disk on `main`.
+**Status:** Snapshot of what's actually on disk on `main` (or, when work is in flight, on the active feature branch).
 **Companion doc:** [`AGENTIC_WORKFLOW.md`](./AGENTIC_WORKFLOW.md) describes the target architecture. The gap between the two is the work backlog — pick tasks from those gaps.
 **Update rule:** Refresh this file whenever files are added, moved, or deleted on `main`.
 
@@ -10,7 +10,7 @@
 
 ```
 beaverhacks-project/
-├── .gitignore                       # team-level ignore (Python, Node, secrets, OS, .claude/, backend/venv/)
+├── .gitignore                       # team-level ignore (Python, Node, secrets, OS, .claude/, model.pkl, large training CSVs)
 ├── README.md                        # public project pitch and high-level summary
 ├── infrastructure.png               # architecture diagram referenced by README
 │
@@ -19,92 +19,137 @@ beaverhacks-project/
 │   ├── background.js                # service worker; listens for tab URL changes and pings the content script
 │   ├── content.js                   # main injection logic — fact-check card, record button, clip sidebar
 │   ├── content.css                  # all extension styling
-│   ├── mock.js                      # mock backend responses (loaded BEFORE content.js); replace with real fetch calls
-│   └── icons/
-│       └── icon48.png
+│   ├── api.js                       # real fetch() calls to the local backend (replaces mock.js paths)
+│   ├── mock.js                      # mock backend responses; kept as fallback when the API errors
+│   └── icons/icon48.png
 │
 ├── backend/                         # Python backend — agent pipeline lives here
-│   ├── main.py                      # (empty stub) intended FastAPI entry point
-│   ├── requirements.txt             # only google-genai + python-dotenv — UNDERSTATED, see "broken" below
+│   ├── main.py                      # FastAPI entry point: app, CORS, /api router, uvicorn entrypoint on port 8000
+│   ├── requirements.txt             # fastapi, uvicorn, openai, pydantic, scikit-learn, joblib, httpx, ...
+│   ├── contracts.py                 # canonical Pydantic models for cross-level shapes (Claim, Source, EvidenceItem,
+│   │                                # VerificationResult, AgentActivityLog, Annotation, frontend response shapes)
+│   │                                # plus pure adapters (to_judge_evidence_items, to_frontend_sources/activity, ...)
 │   ├── api/
-│   │   └── video.py                 # FastAPI routes: POST /process-video, WS /ws/claims/{job_id} (legacy, broken)
+│   │   └── video.py                 # FastAPI routes — /check-political, /analyze-video, /analyze-clip
+│   │                                # composes L1→L5 and returns AnalyzeVideoResponse
 │   ├── agents/
-│   │   ├── README.md                # describes 5 domains: Healthcare, Immigration, Crime, Economy, Education
-│   │   ├── base_agent.py            # universal-fact-checker tier + domain retrieval; google/gemini-2.5-flash via OpenRouter
-│   │   ├── agent_crime.py           # crime domain agent
-│   │   ├── agent_economy.py         # economy domain agent
-│   │   ├── agent_education.py       # education domain agent
-│   │   ├── agent_healthcare.py      # healthcare domain agent
-│   │   ├── agent_immigration.py     # immigration domain agent
+│   │   ├── README.md                # describes the 5-domain taxonomy
+│   │   ├── base.py                  # AllowlistedAgent base class — hard permission enforcement, cache, Tier A/B,
+│   │   │                            # activity logging, robust failure handling. The ConductorOne layer.
+│   │   ├── base_agent.py            # legacy Tier-A/B function (Kevin's original); kept for back-compat callers
+│   │   ├── llm.py                   # OpenRouterLlmClient — async OpenAI-compatible client, lazy module-level singleton
+│   │   ├── orchestrator.py          # AgentOrchestrator — concurrent fan-out via asyncio.gather, bounded concurrency,
+│   │   │                            # topic→agent registry, defense-in-depth exception handling
+│   │   ├── aggregator.py            # L4a/L5-prep — pure-Python aggregation; no LLM (asserted by tests)
+│   │   ├── judge.py                 # L4b confidence rules: source trust/bias from registry,
+│   │   │                            # weighted-evidence math, calculate_confidence_structured()
+│   │   │                            # consumes EvidenceItems directly and skips NLI when nli_source=="agent"
+│   │   ├── agent_crime.py           # CrimeAgent(AllowlistedAgent) + back-compat retrieve_evidence/verify shims
+│   │   ├── agent_economy.py         # EconomyAgent(AllowlistedAgent) — also exports UNIVERSAL_FACT_CHECKERS frozenset
+│   │   ├── agent_education.py       # EducationAgent(AllowlistedAgent)
+│   │   ├── agent_healthcare.py      # HealthcareAgent(AllowlistedAgent)
+│   │   ├── agent_immigration.py     # ImmigrationAgent(AllowlistedAgent)
 │   │   ├── sources.md               # source list with universal fact-checkers tier + per-domain sources
-│   │   └── sources.py               # parses sources.md and returns formatted source strings per section
+│   │   └── sources.py               # parses sources.md (still used by the legacy base_agent.py)
+│   ├── app/
+│   │   └── level2b_routing/         # local multi-label topic classifier (no LLM)
+│   │       ├── topics.py            # canonical topic IDs (single source of truth)
+│   │       ├── types.py             # RoutingDecision dataclass
+│   │       ├── keyword_tables.py    # per-topic keyword + regex tables
+│   │       ├── keyword_matcher.py   # deterministic keyword scoring
+│   │       ├── decision.py          # decision tree: keyword strong / classifier / no_route
+│   │       ├── router.py            # public route() — lazy-loads model.pkl, masks speakers, falls back gracefully
+│   │       ├── data_prep.py         # speaker masking, batch loading, dedup
+│   │       ├── classifier/
+│   │       │   ├── train.py         # CLI to train the OvR-calibrated logistic regression
+│   │       │   ├── predict.py       # load_model + predict_probs
+│   │       │   ├── eval.py          # CLI for offline evaluation (per-topic metrics, threshold sweep, baseline)
+│   │       │   ├── inspect.py       # dump top-N tokens per class
+│   │       │   └── model.pkl        # gitignored — train locally
+│   │       └── data/
+│   │           ├── README.md
+│   │           ├── synthetic_train_*.csv  # 10 batches, ~920 rows; combined_train.csv gitignored
+│   │           └── liar_*.csv             # LIAR dataset for held-out eval
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── extract.py               # claim extraction via Haiku 4.5 (raw httpx → OpenRouter)
-│   │   ├── router.py                # single-label classifier into 5 domains (raw httpx → OpenRouter, Haiku)
+│   │   ├── router.py                # legacy single-label LLM router — superseded by app/level2b_routing
 │   │   └── transcript.py            # YouTube transcript fetch + 60s chunking with 10s overlap
+│   ├── data/
+│   │   ├── media_bias.csv           # AllSides bias ratings — loaded by judge.py at module import
+│   │   └── media_bias_raw.txt       # source data for parsing.py
+│   ├── parsing.py                   # one-shot script that built media_bias.csv
 │   ├── eval/
 │   │   └── README.md                # placeholder — eval harness not yet built
 │   └── tests/
-│       ├── test_crime.py
-│       ├── test_economy.py
-│       ├── test_education.py
-│       ├── test_healthcare.py
-│       ├── test_immigration.py
-│       ├── test_edge_cases.py
-│       └── test_fact_check.py       # exercises the universal-fact-checker tier in base_agent
+│       ├── conftest.py                       # sets dummy OPENROUTER_API_KEY so judge.py imports succeed
+│       ├── test_contracts.py                 # round-trip serialization, adapter shapes, security invariants
+│       ├── test_allowlisted_agent.py         # permission enforcement, cache, Tier A/B, failure handling
+│       ├── test_agent_migration.py           # 5 migrated agents — class attrs + back-compat shims
+│       ├── test_orchestrator.py              # fan-out, concurrency, defense-in-depth
+│       ├── test_aggregator.py                # trust/bias mapping, source dedup, activity propagation, no-LLM invariant
+│       ├── test_judge_structured.py          # NLI-skip-on-agent invariant
+│       ├── test_crime.py / test_economy.py / ...  # legacy per-agent integration tests (require API key)
+│       ├── test_edge_cases.py                # legacy
+│       └── test_fact_check.py                # legacy universal-fact-checker test
 │
 └── docs/
     ├── STRUCTURE.md                 # this file
-    ├── AGENTIC_WORKFLOW.md          # target architecture (post-pivot to Chrome extension)
-    └── CHANGELOG.md                 # 4-line entries per commit/PR (changes, status, future issues)
+    ├── AGENTIC_WORKFLOW.md          # target architecture
+    ├── API_CONTRACT.md              # the synchronous endpoint contract the chrome extension consumes
+    └── CHANGELOG.md                 # 4-line entries per commit/PR
 ```
 
 ---
 
 ## What works today
 
-### Chrome extension (front end, mocked end-to-end)
-- **`manifest.json`** declares an MV3 extension matching `*://www.youtube.com/*`, with `activeTab` permission and a single content script + service worker.
-- **`content.js`** activates on YouTube watch pages, handles SPA navigations via a `MutationObserver` on URL changes, and injects three UI surfaces:
-  - Fact-check card under `#middle-row` (summary, trustworthiness score, political-lean meter, expandable claims, aggregated sources).
-  - Record button in `.ytp-right-controls` for marking a clip in/out (start time captured at click, fact-checks the span on stop).
-  - Clip sidebar in `#secondary-inner` listing recorded clip results with click-to-seek timestamps.
-- **`background.js`** is a thin service worker that pings the content script on YouTube tab URL changes — defensive against missed SPA navigations.
-- **`mock.js`** provides three mock async functions (`MOCK_checkIfPolitical`, `MOCK_getFullAnalysis`, `MOCK_analyzeClip`) returning realistic shapes with simulated latency. Loaded *before* `content.js` so the mock functions are globally available.
+### Chrome extension (front end, real backend)
+- Wired to the real backend via `chrome-extension/api.js`. `mock.js` remains as a fallback when the API errors.
+- Three UI surfaces in `content.js`: full-video fact-check card, record-clip button, clip sidebar.
+- SPA navigation handled via a `MutationObserver` on URL changes.
 
-### Backend (currently disconnected from the extension)
-- **Universal-fact-checker tier** (`agents/base_agent.py`): Tier A check sends the claim plus the "Universal Fact Checkers (Priority)" source list to Gemini-2.5-flash and asks if it's been *explicitly* fact-checked. If yes, returns the fact-checker's verdict. If no, returns `NO_FACT_CHECK_FOUND` and Tier B runs.
-- **Domain retrieval** (`agents/base_agent.py` Tier B): falls through to a domain-specific evidence-gathering call against the topic agent's source list, returning Markdown.
-- **Domain agents** (`agents/agent_*.py`): thin wrappers passing domain name + source examples + claim into `run_domain_agent`. Both `retrieve_evidence` and `verify` aliases exposed.
-- **Source registry** (`agents/sources.md` + `sources.py`): six universal fact-checkers (PolitiFact, FactCheck.org, Snopes, AP, Reuters, WaPo) plus per-domain government sources. Parser is `## Section` aware.
-- **Transcript ingestion** (`core/transcript.py`): pulls captions via `youtube-transcript-api`, normalizes timestamps, chunks into ~60s windows with 10s overlap. Not currently wired to the extension; will be replaced by extension-supplied caption text.
-- **Claim extraction** (`core/extract.py`): sends a chunk + system prompt to Haiku 4.5 via OpenRouter, parses JSON-array response. Strict verifiability filter.
-- **Topic classification** (`core/router.py`): single-label classifier into 5 domains via Haiku. Returns `(domain, confidence)` plus `needs_fallback` at 0.6. Falls back to `"other"` on parse failure or unknown domain.
-- **Test scaffolding** (`tests/`): one test file per agent, plus `test_edge_cases.py` and `test_fact_check.py` exercising the universal-fact-checker tier.
+### Backend (live, end-to-end)
+- **`main.py`** — FastAPI app with CORS, includes `/api` router, uvicorn entrypoint on `:8000`.
+- **`POST /api/check-political`** — currently mocked-true so the rest of the pipeline runs.
+- **`POST /api/analyze-video`** — full L1→L5 pipeline:
+  - L1 transcript via `core/transcript.py` (YouTube captions, 60s chunks, 10s overlap)
+  - L2a claim extraction via `core/extract.py` (Haiku 4.5)
+  - L2b topic routing via `app/level2b_routing/router.route()` — local, multi-label, no LLM
+  - L3 fan-out via `agents/orchestrator.AgentOrchestrator` — concurrent, bounded, hard allowlist
+  - L4b confidence via `agents/judge.calculate_confidence_structured` — skips NLI when agent pre-filled
+  - L4a/L5-prep via `agents/aggregator.aggregate_annotations` — pure Python rules, no LLM
+- **`POST /api/analyze-clip`** — same pipeline scoped to a single chunk; accepts caption-text override.
 
-## What's stubbed or broken
+### L3 enforcement (the ConductorOne thesis as code)
+- Every agent extends `AllowlistedAgent`. `ALLOWED_SOURCES` is a frozenset declared at the class level.
+- Tier A: universal-fact-checker probe (Haiku) — short-circuits when a verdict exists, pre-fills `nli_source="agent"` so the judge skips its NLI call.
+- Tier B: domain retrieval (Gemini 2.5 Flash) with structured-JSON output. Citations not in `ALLOWED_SOURCES` are dropped from evidence and recorded in `denied_sources`.
+- Source-name normalization handles cosmetic variants (`"factcheck.org"` ≡ `"FactCheck.org"`).
+- Per-call disk-key cache (in-memory by default; swap-in seam for `diskcache` later). `cache_hit=True` propagates to activity logs.
+- All failure modes (parse failures, network errors) surface in `AgentActivityLog.error` rather than crashing.
 
-- **No backend endpoints yet.** The extension expects `POST /api/check-political`, `POST /api/analyze-video`, and `POST /api/analyze-clip`. None exist. `mock.js` is the only thing serving them.
-- **`backend/main.py`** — empty file. No FastAPI app instance.
-- **`backend/api/video.py`** — legacy from before the pivot. Routes are `/process-video` (returns a fake `job_id`) and a comment-only WebSocket handler. **Imports `route_claim_to_agent` from `core.router`, but that function doesn't exist.** Import fails at runtime.
-- **`backend/requirements.txt`** — only `google-genai` + `python-dotenv`. Missing real deps: `fastapi`, `openai`, `httpx`, `youtube-transcript-api`, `uvicorn`, `pytest`. `google-genai` is listed but not imported anywhere.
-- **`backend/eval/`** — one-line README. No eval harness for the post-pivot pipeline either.
-- **Three independent LLM clients.** `extract.py` and `router.py` build raw `httpx.AsyncClient` calls to OpenRouter for Haiku; `base_agent.py` uses `AsyncOpenAI` for Gemini-2.5-flash. No shared client, no model registry.
-- **Topic routing single-label.** `router.py` returns one domain string; the extension/spec expects multi-label.
-- **No `clips/` directory** — the original 5-clip library concept is dropped post-pivot, but nothing was deleted in its place either.
+### L4b auditability invariant
+- AGENTIC_WORKFLOW.md mandates "no LLM" at L4b. The deterministic verdict math lives in `aggregator.py` and the rules-based aggregation. NLI scoring still uses Gemini (Kevin's original design); the call is skipped on Tier-A hits.
+- `test_aggregator_does_not_import_an_llm_client` enforces the no-LLM invariant on the aggregator at test time.
+
+### Tests
+- 134/134 currently pass on the L3 branch (61 contract / agent / orchestrator + 24 aggregator + 7 judge_structured + 42 routing).
+- Excluded: legacy `test_crime/economy/.../fact_check` integration tests that require a live OpenRouter API key.
+
+---
 
 ## Known deltas vs. AGENTIC_WORKFLOW.md (target)
 
-Open work items, with one-line "what to do" notes:
+Open work items remaining:
 
-1. **Backend endpoints.** Build `/api/check-political`, `/api/analyze-video`, `/api/analyze-clip` matching the contracts in AGENTIC_WORKFLOW.md. Wire FastAPI in `main.py`.
-2. **Replace mock.js with real fetch calls.** Each `MOCK_*` function in `chrome-extension/mock.js` carries a comment listing the intended endpoint. Swap one at a time.
-3. **Topic routing → multi-label.** Current `router.py` is single-label LLM. New module at `backend/app/level2b_routing/` is in progress on `feat/routing_base` (keyword-first hybrid with logistic-regression fallback).
-4. **LLM client centralization.** Three independent constructions (extract / router / base_agent) need consolidation. New module needs a shared client and a model registry. Do this when next touching any of those three files.
-5. **Verdict pipeline assembly.** No code yet assembles per-claim verdicts into the `VideoAnalysis` shape (summary, trustworthiness score, political lean, aggregated sources). This is Level 5 work — needs design.
-6. **Eval harness.** Original 5-clip ground-truth approach is dead. Replacement undecided (see AGENTIC_WORKFLOW.md § Level 7).
-7. **Legacy `core/transcript.py` and `api/video.py`** are pre-pivot artifacts. Decide whether to delete or repurpose.
-8. **`README.md` is stale.** Still describes the pre-pivot pitch (3 agents, judge model, 5 sources). Front door doesn't match current architecture.
+1. **Topic taxonomy.** Disk: 5 topics (`immigration`, `healthcare`, `crime`, `economy`, `education`). Spec: 4 topics (`legislative`, `economy`, `historical_statements`, `policy_outcome`). Disk taxonomy is what shipped; the spec hasn't been updated. **What to do:** team conversation; either commit the spec to the disk taxonomy or pivot the agents.
+2. **L4b rules-only invariant is partial.** Aggregator and verdict math are LLM-free. NLI scoring still uses Gemini for non-Tier-A items. **What to do:** decide whether to keep LLM-NLI (and update spec), or replace with a smaller deterministic NLI step.
+3. **Real test data for the routing classifier.** `data/real_test.csv` doesn't exist yet. The 0.95 macro-F1 numbers are training-distribution. Hand-label 50–100 real claims for honest accuracy.
+4. **Eval harness.** No L6 batch runner against ground-truth clips. AGENTIC_WORKFLOW.md § Level 7 specifies extraction / routing / citation-relevance metrics; nothing is built yet.
+5. **Legacy `core/router.py` and `agents/base_agent.py`** are no longer used by `api/video.py` after the L3 refactor, but remain on disk. **What to do:** delete after one demo session confirms nothing else depends on them.
+6. **Activity panel UI.** Backend now serves `FrontendActivity` rows on each claim, but the chrome extension doesn't render them yet. **What to do:** austaciouscoder picks up the rendering work when ready.
+7. **Caching invariant — disk-backed.** `AllowlistedAgent` uses `InMemoryCache` by default (lost on restart). AGENTIC_WORKFLOW.md mandates persistent caching. **What to do:** swap in `diskcache.Cache` via the existing `Cache` protocol; ~10 lines.
+8. **README.md is stale.** Still pre-pivot. Front door doesn't match current architecture.
 
 When picking up a task, find the corresponding section in `AGENTIC_WORKFLOW.md` for the contract/intent, then update this file when your work lands.

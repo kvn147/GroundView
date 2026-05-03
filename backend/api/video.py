@@ -1,18 +1,40 @@
+"""FastAPI routes for the fact-check pipeline.
+
+The full pipeline that ``/analyze-video`` runs:
+
+  L1  transcript fetch     — backend/core/transcript.py
+  L2a claim extraction     — backend/core/extract.py (Haiku)
+  L2b topic routing        — backend/app/level2b_routing/router.py (local)
+  L3  agent fan-out        — backend/agents/orchestrator.py
+       └─ allowlist enforce — backend/agents/base.py (the moneyshot)
+  L4a aggregation          — backend/agents/aggregator.py (rules-only)
+  L4b confidence rules     — backend/agents/judge.py (calculate_confidence_structured)
+  L5  rendering            — backend/contracts.py shapes the response
+
+The route handler stays thin: it composes those modules and returns
+the ``AnalyzeVideoResponse`` shape the chrome extension expects.
+"""
+
+from __future__ import annotations
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
-from backend.core.transcript import get_transcript
+from backend.agents.aggregator import aggregate_annotations
+from backend.agents.judge import calculate_confidence_structured
+from backend.agents.orchestrator import AgentOrchestrator
+from backend.app.level2b_routing.router import route as l2b_route
+from backend.contracts import Annotation, Claim, ConfidenceState
 from backend.core.extract import extract_claims
-from backend.core.router import classify_claim
-from backend.agents.agent_crime import retrieve_evidence as verify_crime
-from backend.agents.agent_economy import retrieve_evidence as verify_economy
-from backend.agents.agent_education import retrieve_evidence as verify_education
-from backend.agents.agent_healthcare import retrieve_evidence as verify_healthcare
-from backend.agents.agent_immigration import retrieve_evidence as verify_immigration
-from backend.agents.judge import extract_evidence_items, calculate_confidence
+from backend.core.transcript import get_transcript
 
 api_router = APIRouter()
+
+# Single orchestrator instance per process — keeps each agent's
+# in-memory cache warm across requests.
+_orchestrator = AgentOrchestrator()
+
 
 class PoliticalCheckRequest(BaseModel):
     title: Optional[str] = ""
@@ -20,8 +42,10 @@ class PoliticalCheckRequest(BaseModel):
     tags: Optional[str] = ""
     aiDescription: Optional[str] = ""
 
+
 class AnalyzeVideoRequest(BaseModel):
     url: str
+
 
 class AnalyzeClipRequest(BaseModel):
     url: str
@@ -29,123 +53,142 @@ class AnalyzeClipRequest(BaseModel):
     endTime: float
     captions: Optional[str] = ""
 
+
 @api_router.post("/check-political")
 async def check_political(req: PoliticalCheckRequest):
-    # Mock implementation for now, always return true to let the video proceed
+    # Mock for now — always returns true so the rest of the pipeline runs.
     return {"isPolitical": True}
+
+
+def _confidence_state_from_score(final_score: float) -> ConfidenceState:
+    """Map judge's numeric score onto the L4b state enum from
+    AGENTIC_WORKFLOW.md. Threshold-based, deterministic."""
+    if final_score > 0.6:
+        return "verified"
+    if final_score < -0.6:
+        return "contradicted"
+    if final_score == 0.0:
+        return "insufficient_coverage"
+    return "sources_disagree"
+
 
 @api_router.post("/analyze-video")
 async def analyze_video(req: AnalyzeVideoRequest):
     chunks = await get_transcript(req.url)
-    
-    claims_data = []
-    
-    # Process up to a certain number of chunks for MVP so it doesn't timeout
+
+    annotations: list[Annotation] = []
+
+    # MVP cap: 5 chunks is enough for the demo and avoids HTTP timeout.
     for chunk in chunks[:5]:
         extracted = await extract_claims(chunk["text"], chunk["timestamp"])
         for claim_info in extracted:
             claim_text = claim_info["claim"]
-            domain, confidence = await classify_claim(claim_text)
-            
-            evidence = "No evidence retrieved."
-            if domain == "crime":
-                evidence = await verify_crime(claim_text)
-            elif domain == "economy":
-                evidence = await verify_economy(claim_text)
-            elif domain == "education":
-                evidence = await verify_education(claim_text)
-            elif domain == "healthcare":
-                evidence = await verify_healthcare(claim_text)
-            elif domain == "immigration":
-                evidence = await verify_immigration(claim_text)
-                
-            # Judge verification
-            evidence_items = await extract_evidence_items(evidence)
-            judge_result = await calculate_confidence(claim_text, evidence_items)
-            
-            claims_data.append({
-                "id": f"claim-{len(claims_data)+1}",
-                "text": claim_text,
-                "verdict": judge_result.get("verdict", "Unverified"),
-                "explanation": f"{evidence}\n\n**Fact-Checker Warning:** {judge_result.get('warning')}" if judge_result.get("warning") else evidence,
-                "sources": [{"name": item.get("source", "Unknown"), "url": "#"} for item in evidence_items],
-                "_score": judge_result.get("final_score", 0.0),
-                "_bias": judge_result.get("average_bias", 0.0)
-            })
-            
-    # Calculate video-level aggregations
-    num_claims = len(claims_data)
-    if num_claims > 0:
-        avg_score = sum(c["_score"] for c in claims_data) / num_claims
-        avg_bias = sum(c["_bias"] for c in claims_data) / num_claims
-    else:
-        avg_score = 0.0
-        avg_bias = 0.0
-        
-    # Map final_score (-1.0 to 1.0) to a 1-5 scale
-    trust_score = round(((avg_score + 1) / 2) * 4) + 1
-    trust_score = max(1, min(5, trust_score))
-    
-    trust_labels = {
-        1: "Mostly False",
-        2: "Mixed / Leans False",
-        3: "Mixed Accuracy / Needs Context",
-        4: "Mostly True",
-        5: "Highly Accurate"
-    }
-    trust_label = trust_labels[trust_score]
-    
-    # Map average bias to political lean label
-    if avg_bias < -0.3:
-        lean_label = "Leans Left"
-    elif avg_bias > 0.3:
-        lean_label = "Leans Right"
-    else:
-        lean_label = "Center / Neutral"
-        
-    lean_value = (avg_bias + 1) / 2  # Map -1.0..1.0 to 0.0..1.0 for the UI progress bar
-    
-    # Aggregate sources
-    agg_sources_map = {}
-    for c in claims_data:
-        for s in c["sources"]:
-            name = s["name"]
-            if name not in agg_sources_map:
-                agg_sources_map[name] = {"name": name, "url": s["url"], "citedCount": 0}
-            agg_sources_map[name]["citedCount"] += 1
-            
-    # Clean up internal keys
-    for c in claims_data:
-        c.pop("_score", None)
-        c.pop("_bias", None)
 
-    summary = (
-        f"Analyzed {num_claims} claims. Overall video reliability is {trust_label} "
-        f"with a {lean_label.lower()} sourcing bias."
-    ) if num_claims > 0 else "No verifiable political claims were extracted from this video."
+            # L2b routing — local classifier, multi-label, no LLM.
+            decision = l2b_route(claim_text)
 
-    # Construct the final synchronous object expected by the frontend mock.js
-    return {
-        "summary": summary,
-        "trustworthinessScore": trust_score,
-        "maxScore": 5,
-        "trustworthinessLabel": trust_label,
-        "politicalLean": {
-            "label": lean_label,
-            "value": round(lean_value, 2)
-        },
-        "claims": claims_data,
-        "aggregatedSources": list(agg_sources_map.values())
-    }
+            # L3 fan-out — concurrent across routed topics, with hard
+            # allowlist enforcement inside each agent.
+            fanout = await _orchestrator.run(
+                claim_text=claim_text,
+                routed_topics=decision.routed_topics,
+            )
+
+            # L4b — score and aggregate evidence across all agents that
+            # ran. Each agent's evidence is unioned; the judge sees one
+            # flat list of EvidenceItems for the claim.
+            all_evidence = [
+                item
+                for result in fanout.results
+                for item in result.evidence_items
+            ]
+            judge_result = await calculate_confidence_structured(
+                claim_text, all_evidence
+            )
+
+            annotations.append(
+                Annotation(
+                    claim=Claim(
+                        claim_text=claim_text,
+                        raw_quote=claim_info.get("raw_quote", claim_text),
+                        start_time=claim_info.get("timestamp", chunk["timestamp"]),
+                        end_time=claim_info.get("timestamp", chunk["timestamp"]),
+                        topics=decision.routed_topics,
+                    ),
+                    results=fanout.results,
+                    confidence_state=_confidence_state_from_score(
+                        judge_result.get("final_score", 0.0)
+                    ),
+                    final_score=judge_result.get("final_score", 0.0),
+                    bias_warning=judge_result.get("warning") or None,
+                )
+            )
+
+    # L4a + L5 prep — pure-Python aggregation into the response shape.
+    response = aggregate_annotations(annotations)
+    return response.model_dump()
+
 
 @api_router.post("/analyze-clip")
 async def analyze_clip(req: AnalyzeClipRequest):
-    # Simple fallback that processes just one text chunk if provided, or mocks it
+    # Same pipeline as /analyze-video but bounded to one chunk; the
+    # frontend supplies caption text directly so we can skip the
+    # transcript fetch.
+    chunks = (
+        [{"text": req.captions, "timestamp": req.startTime}]
+        if req.captions
+        else (await get_transcript(req.url))
+    )
+
+    # Find the chunk that overlaps the requested window. Fall back to
+    # the first chunk if nothing matches.
+    selected = chunks[0]
+    for chunk in chunks:
+        ts = chunk.get("timestamp", 0)
+        if req.startTime <= ts <= req.endTime:
+            selected = chunk
+            break
+
+    extracted = await extract_claims(selected["text"], selected["timestamp"])
+    if not extracted:
+        return {
+            "startTime": req.startTime,
+            "endTime": req.endTime,
+            "claim": "No verifiable claim detected in this clip.",
+            "verdict": "Unverified",
+            "explanation": "",
+            "sources": [],
+        }
+
+    claim_info = extracted[0]
+    claim_text = claim_info["claim"]
+    decision = l2b_route(claim_text)
+    fanout = await _orchestrator.run(claim_text, decision.routed_topics)
+    all_evidence = [
+        item for result in fanout.results for item in result.evidence_items
+    ]
+    judge_result = await calculate_confidence_structured(claim_text, all_evidence)
+
+    explanation_parts = [r.summary_markdown for r in fanout.results if r.summary_markdown]
+    explanation = "\n\n".join(explanation_parts) or "_No evidence retrieved._"
+    if judge_result.get("warning"):
+        explanation = f"{explanation}\n\n**Fact-Checker Warning:** {judge_result['warning']}"
+
+    sources = []
+    seen: set[str] = set()
+    for result in fanout.results:
+        for item in result.evidence_items:
+            name = item.source.name
+            if name in seen:
+                continue
+            seen.add(name)
+            sources.append({"name": name, "url": item.source.url or ""})
+
     return {
         "startTime": req.startTime,
         "endTime": req.endTime,
-        "claim": "Manual clip analysis.",
-        "verdict": "Pending",
-        "explanation": "Clip analysis backend logic will process specific timestamps here.",
-        "sources": []
+        "claim": claim_text,
+        "verdict": judge_result.get("verdict", "Unverified"),
+        "explanation": explanation,
+        "sources": sources,
     }

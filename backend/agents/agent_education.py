@@ -1,21 +1,39 @@
-"""
-Education Agent - Retrieves information for education claims using OpenRouter.
-"""
+"""Education domain agent (Level 3). See ``agent_economy.py`` for shape."""
 
-from .base_agent import run_domain_agent
+from __future__ import annotations
+
+from .agent_economy import UNIVERSAL_FACT_CHECKERS
+from .base import AllowlistedAgent
+from .llm import get_default_llm_client
+
+
+class EducationAgent(AllowlistedAgent):
+    DOMAIN_NAME = "education"
+    DOMAIN_DESCRIPTION = (
+        "K-12, universities, student debt, teachers, Title I"
+    )
+    ALLOWED_SOURCES = UNIVERSAL_FACT_CHECKERS | frozenset({
+        "NCES",
+        "BLS",
+        "Census Bureau",
+        "Pew Research Center",
+    })
+
+
+_agent_singleton: EducationAgent | None = None
+
+
+def _get_agent() -> EducationAgent:
+    global _agent_singleton
+    if _agent_singleton is None:
+        _agent_singleton = EducationAgent(llm=get_default_llm_client())
+    return _agent_singleton
+
 
 async def retrieve_evidence(claim: str) -> str:
-    """
-    Uses OpenRouter to retrieve facts and context about an education claim. 
-    Returns the gathered information in Markdown.
-    """
-    return await run_domain_agent(
-        domain="education",
-        specialty_desc="education, demographic data, and policy",
-        source_examples="(like NCES, BLS, Census Bureau, Pew Research, etc.)",
-        claim=claim
-    )
+    result = await _get_agent().verify(claim)
+    return result.summary_markdown
 
-# Alias to match what router.py might be calling
+
 async def verify(claim: str) -> str:
     return await retrieve_evidence(claim)
