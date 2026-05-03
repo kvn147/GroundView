@@ -9,8 +9,12 @@
   let recordStartTime = 0;
   let recordTimerInterval = null;
   let clipResults = [];
+  let currentAnalysis = null;
   let currentTranscriptId = null;
   let currentTranscriptSegments = [];
+  let timelineSyncInterval = null;
+
+  const CLAIM_ACTIVE_PADDING_SECONDS = 8;
 
   // ── Helpers ──
 
@@ -212,9 +216,90 @@
     const btn = document.querySelector(".ytfc-record-btn");
     if (btn) btn.remove();
     stopRecording(true);
+    clearInterval(timelineSyncInterval);
+    timelineSyncInterval = null;
     clipResults = [];
+    currentAnalysis = null;
     currentTranscriptId = null;
     currentTranscriptSegments = [];
+  }
+
+  function getActiveClaimsForTime(currentTime) {
+    const claims = currentAnalysis?.claims || [];
+    return claims
+      .filter((claim) => Number.isFinite(claim.startTime))
+      .map((claim) => {
+        const start = claim.startTime;
+        const end = Number.isFinite(claim.endTime) ? Math.max(claim.endTime, start) : start;
+        const paddedStart = Math.max(0, start - CLAIM_ACTIVE_PADDING_SECONDS);
+        const paddedEnd = end + CLAIM_ACTIVE_PADDING_SECONDS;
+        const inWindow = currentTime >= paddedStart && currentTime <= paddedEnd;
+        const distance = inWindow
+          ? 0
+          : Math.min(Math.abs(currentTime - paddedStart), Math.abs(currentTime - paddedEnd));
+        return { claim, start, end, inWindow, distance };
+      })
+      .filter((item) => item.inWindow)
+      .sort((a, b) => a.distance - b.distance || a.start - b.start)
+      .map((item) => item.claim);
+  }
+
+  function renderTimelineClaims() {
+    const sidebar = document.querySelector(".ytfc-clip-sidebar");
+    if (!sidebar) return;
+
+    const timeEl = sidebar.querySelector(".ytfc-timeline-now");
+    const list = sidebar.querySelector(".ytfc-timeline-list");
+    if (!timeEl || !list) return;
+
+    const currentTime = getVideoCurrentTime();
+    timeEl.textContent = formatTime(currentTime);
+
+    const activeClaims = getActiveClaimsForTime(currentTime);
+    list.innerHTML = "";
+
+    if (!currentAnalysis || !Array.isArray(currentAnalysis.claims)) {
+      list.innerHTML = `<div class="ytfc-timeline-empty">Run video analysis to load timeline claims.</div>`;
+      return;
+    }
+
+    if (activeClaims.length === 0) {
+      list.innerHTML = `<div class="ytfc-timeline-empty">No extracted claim is mapped to this moment in the video.</div>`;
+      return;
+    }
+
+    activeClaims.forEach((claim) => {
+      const card = document.createElement("div");
+      card.className = "ytfc-timeline-card";
+      const claimStartTime = Number.isFinite(claim.startTime) ? claim.startTime : 0;
+      const claimEndTime = Number.isFinite(claim.endTime) ? claim.endTime : claimStartTime;
+      card.innerHTML = `
+        <div class="ytfc-timeline-meta">
+          <button class="ytfc-timeline-ts" type="button" data-time="${claimStartTime}">${formatTime(claimStartTime)}${claimEndTime > claimStartTime ? ` - ${formatTime(claimEndTime)}` : ""}</button>
+          <span class="ytfc-verdict ${getVerdictClass(claim.verdict)}">${claim.verdict}</span>
+        </div>
+        <div class="ytfc-timeline-claim">${claim.text}</div>
+        <div class="ytfc-timeline-explanation">${claim.explanation}</div>
+        <div class="ytfc-timeline-sources">
+          ${claim.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join("")}
+        </div>
+      `;
+
+      const tsButton = card.querySelector(".ytfc-timeline-ts");
+      if (tsButton) {
+        tsButton.addEventListener("click", () => {
+          seekVideoTo(parseFloat(tsButton.dataset.time));
+        });
+      }
+
+      list.appendChild(card);
+    });
+  }
+
+  function startTimelineSync() {
+    clearInterval(timelineSyncInterval);
+    timelineSyncInterval = setInterval(renderTimelineClaims, 500);
+    renderTimelineClaims();
   }
 
   // ── Fact-Check Card Builder ──
@@ -452,6 +537,15 @@
     const sidebar = document.createElement("div");
     sidebar.className = "ytfc-clip-sidebar";
     sidebar.innerHTML = `
+      <div class="ytfc-timeline-panel">
+        <div class="ytfc-timeline-header">
+          <span class="ytfc-timeline-title">Current Claim Context</span>
+          <span class="ytfc-timeline-now">0:00</span>
+        </div>
+        <div class="ytfc-timeline-list">
+          <div class="ytfc-timeline-empty">Run video analysis to load timeline claims.</div>
+        </div>
+      </div>
       <div class="ytfc-clip-sidebar-header">
         <span class="ytfc-clip-sidebar-title">Clip Fact-Checks</span>
         <span class="ytfc-clip-count">0 clips</span>
@@ -465,6 +559,8 @@
     if (secondary) {
       secondary.insertBefore(sidebar, secondary.firstChild);
     }
+
+    renderTimelineClaims();
   }
 
   function addClipLoading() {
@@ -594,11 +690,13 @@
       currentTranscriptId
     );
     console.log("[FactChecker] Analysis result — claims:", analysis.claims?.length || 0);
+    currentAnalysis = analysis;
     injectFactCheckCard(analysis);
 
     // Step 3: Inject record button & sidebar
     injectRecordButton();
     ensureClipSidebar();
+    startTimelineSync();
   }
 
   // ── YouTube SPA Navigation Detection ──
