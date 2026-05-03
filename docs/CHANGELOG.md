@@ -42,3 +42,8 @@ Most recent on top. When your PR/commit lands, append an entry under today's dat
 **Changes:** Added `docs/STRUCTURE.md`, `docs/AGENTIC_WORKFLOW.md`, `docs/CHANGELOG.md`. Removed outdated `structure.md` from repo root. Added `.gitignore` covering Python, Node, secrets, OS files, and `.claude/`.
 **Current status:** Docs scaffolded; spec is canonical.
 **Future issues / conflicts:** None at the time of this commit (later contradicted by kevin-topics merge).
+
+## 2026-05-03 - chore(api): implement API contract and endpoints
+**Changes:** Added API contract documentation and implemented synchronous API endpoints for backend and frontend integration. Updated backend with endpoint logic for political check, video analysis, and clip analysis, including prompt templates and mock backend.
+**Current status:** API endpoints are implemented and functional, with mock backend for testing.
+**Future issues / conflicts:** Asynchronous pipeline needs to be implemented to replace the synchronous endpoints.

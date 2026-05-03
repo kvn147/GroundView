@@ -18,12 +18,11 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 async def get_transcript(youtube_url: str) -> list[dict]:
     video_id = _extract_video_id(youtube_url)
-    ytt_api = YouTubeTranscriptApi()
     transcript = await asyncio.to_thread(
-        ytt_api.fetch, video_id
+        YouTubeTranscriptApi.get_transcript, video_id
     )
     normalized = [
-        {"timestamp": round(s.start, 2), "text": s.text}
+        {"timestamp": round(s["start"], 2), "text": s["text"]}
         for s in transcript
     ]
     return _chunk_segments(normalized)
