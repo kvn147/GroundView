@@ -17,6 +17,9 @@ class CrimeAgent(AllowlistedAgent):
         "FBI",
         "NIJ",
         "Pew Research Center",
+        "Sentencing Project",
+        "National Center for State Courts",
+        "Vera Institute of Justice",
     })
 
 

@@ -17,8 +17,8 @@ logs it as a synthetic failed ``VerificationResult`` so the activity
 panel still surfaces the failure, and lets the rest of the fan-out
 complete.
 
-Concurrency is bounded by ``max_concurrency`` (default 5). One agent
-per topic, so for the 5-topic taxonomy this runs everything in
+Concurrency is bounded by ``max_concurrency`` (default 8). One agent
+per topic, so for the 8-topic taxonomy this runs everything in
 parallel by default.
 """
 
@@ -37,8 +37,11 @@ from backend.contracts import (
 from .agent_crime import CrimeAgent
 from .agent_economy import EconomyAgent
 from .agent_education import EducationAgent
+from .agent_elections import ElectionsAgent
+from .agent_foreign_policy import ForeignPolicyAgent
 from .agent_healthcare import HealthcareAgent
 from .agent_immigration import ImmigrationAgent
+from .agent_legal_political import LegalPoliticalAgent
 from .base import AllowlistedAgent, Cache, LlmClient
 from .llm import get_default_llm_client
 
@@ -50,8 +53,11 @@ AGENT_REGISTRY: dict[str, type[AllowlistedAgent]] = {
     "crime": CrimeAgent,
     "economy": EconomyAgent,
     "education": EducationAgent,
+    "elections": ElectionsAgent,
+    "foreign_policy": ForeignPolicyAgent,
     "healthcare": HealthcareAgent,
     "immigration": ImmigrationAgent,
+    "legal_political": LegalPoliticalAgent,
 }
 
 
@@ -73,7 +79,7 @@ class AgentOrchestrator:
         llm: Optional[LlmClient] = None,
         cache: Optional[Cache] = None,
         *,
-        max_concurrency: int = 5,
+        max_concurrency: int = 8,
         registry: Optional[dict[str, type[AllowlistedAgent]]] = None,
     ) -> None:
         self._llm = llm if llm is not None else get_default_llm_client()

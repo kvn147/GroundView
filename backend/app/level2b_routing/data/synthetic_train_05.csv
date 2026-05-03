@@ -1,78 +1,78 @@
 # Constraint: D (numeric-heavy — every claim contains a specific number, percentage, or dollar amount)
-claim_text,immigration,healthcare,crime,economy,education
-"The administration approved 487,000 employment-based visas during the most recent fiscal year, a 12 percent increase.",1,0,0,0,0
-"Senator Henrik Voss introduced legislation expanding refugee admissions to 125,000 annually starting in 2025.",1,0,0,0,0
-"Border Patrol arrested 2.4 million individuals during the most recent twelve-month enforcement window.",1,0,0,0,0
-"USCIS reduced its asylum interview backlog from 1.6 million to 1.1 million cases over 18 months.",1,0,0,0,0
-"Representative Annette Pulaski voted against allocating $14 billion in supplemental border security funding.",1,0,0,1,0
-"H-1B petitions filed in fiscal year 2024 totaled 781,000 against an annual cap of 85,000.",1,0,0,1,0
-"Governor Tomas Reichert deployed 3,200 state National Guard troops to assist with federal operations.",1,0,0,0,0
-"The administration paroled 240,000 individuals into the country under three humanitarian programs.",1,0,0,0,0
-"Detained migrants spent an average of 47 days in ICE custody during the most recent fiscal year.",1,0,0,0,0
-"Senator Ileana Voskanyan voted to fund 18,000 additional immigration judges over a five-year period.",1,0,0,0,0
-"Customs and Border Protection seized 27,400 pounds of fentanyl at official crossings last year.",1,0,1,0,0
-"Refugee resettlement agencies received $1.2 billion in federal funding during the most recent fiscal year.",1,0,0,1,0
-"The asylum officer corps grew to 4,800 personnel after a hiring surge of 1,400 positions.",1,0,0,0,0
-"AG Mireya Calderon-Schultz announced 41 indictments in a $32 million human smuggling enterprise.",1,0,1,0,0
-"Mayor Ezekiel Tanaka announced that the city would absorb 6,200 newly arrived migrants over three months.",1,0,0,0,0
-"Premiums for benchmark ACA plans rose 7.4 percent on average for the upcoming plan year.",0,1,0,0,0
-"Medicare drug price negotiations targeted 10 medications projected to save $7.4 billion annually.",0,1,0,1,0
-"Hospital systems reported $42 billion in uncompensated care costs during the previous calendar year.",0,1,0,1,0
-"Senator Wilhelmina Stoltzfus introduced legislation funding 14,000 new primary care residency slots over five years.",0,1,0,0,0
-"FDA approved 55 novel drug applications and 18 biosimilars during the previous calendar year.",0,1,0,0,0
-"Maternal mortality rates climbed to 32.9 deaths per 100,000 live births last year.",0,1,0,0,0
-"Representative Bartolomeo Aguirre voted to expand Medicaid telehealth permanently at a cost of $4.2 billion.",0,1,0,1,0
-"Mental health crisis hotlines handled 4.8 million calls during the first full year of operation.",0,1,0,0,0
-"The 988 Suicide and Crisis Lifeline received $501 million in federal funding during the most recent year.",0,1,0,1,0
-"Insulin copays dropped to $35 per month for 3.4 million Medicare beneficiaries.",0,1,0,0,0
-"Hospital closures hit 47 rural facilities during the previous fiscal year, displacing 28,000 patients.",0,1,0,0,0
-"Governor Sanjay Whitfield-Park signed legislation expanding Medicaid coverage to 410,000 additional adults.",0,1,0,1,0
-"AG Caetana Brushwood-Vargas filed civil charges against three insurers in a $94 million claims-denial scheme.",0,1,1,0,0
-"Drug overdose deaths declined 4.1 percent nationwide, the first decrease in five years.",0,1,1,0,0
-"The Indian Health Service expanded its facility network by 22 sites serving 380,000 additional members.",0,1,0,0,0
-"Federal indictments for fentanyl trafficking rose 41 percent to 8,400 cases during the previous fiscal year.",0,0,1,0,0
-"Violent crime in the 50 largest cities declined 8.2 percent during the first three quarters.",0,0,1,0,0
-"Federal Bureau of Prisons reduced its population to 158,000, a 14 percent decrease over five years.",0,0,1,0,0
-"Senator Calliope Rinaldi voted to expand federal grants for body cameras by $480 million.",0,0,1,0,0
-"Recidivism rates within three years of release dropped to 38 percent in the most recent cohort.",0,0,1,0,0
-"AG Pendleton Aiyappa announced 142 federal indictments in a $640 million Medicare fraud scheme.",0,1,1,0,0
-"Police staffing nationwide fell 8 percent below authorized levels, leaving 47,000 positions unfilled.",0,0,1,0,0
-"Federal law enforcement officers conducted 2.1 million arrests during the most recent fiscal year.",0,0,1,0,0
-"Hate crimes reported to the FBI rose 19 percent to 11,634 incidents nationwide last year.",0,0,1,0,0
-"Representative Saoirse Niedermeyer voted against expanding the federal death penalty to additional offenses.",0,0,1,0,0
-"State and local governments spent $115 billion on policing during the most recent fiscal year.",0,0,1,1,0
-"Pretrial detention populations declined 14 percent across 22 reform jurisdictions over three years.",0,0,1,0,0
-"Governor Eunmi Sundberg-Park signed legislation funding 1,200 new public defender positions statewide.",0,0,1,1,0
-"Inflation cooled to 3.1 percent annualized over the trailing twelve months.",0,0,0,1,0
-"Manufacturing payrolls added 38,000 jobs during the third quarter, exceeding consensus forecasts of 22,000.",0,0,0,1,0
-"GDP grew at an annualized rate of 4.9 percent during the most recent quarter, the fastest in two years.",0,0,0,1,0
-"Federal Reserve held the federal funds rate at 5.5 percent for the third consecutive meeting.",0,0,0,1,0
-"Senator Octavian Marchetti voted against extending the 2017 tax cuts at a projected cost of $4.6 trillion.",0,0,0,1,0
-"The federal deficit widened to $1.7 trillion in fiscal year 2023, an 8 percent increase year over year.",0,0,0,1,0
-"Median household income rose to $74,580 last year, a 1.6 percent gain after inflation.",0,0,0,1,0
-"Representative Velvet Okonkwo-Reilly co-sponsored a bill creating $48 billion in clean-energy manufacturing tax credits.",0,0,0,1,0
-"Mortgage rates averaged 7.2 percent during the previous quarter, the highest in 22 years.",0,0,0,1,0
-"Small business applications hit 5.5 million during the previous calendar year, a record high.",0,0,0,1,0
-"AG Yusra Ezenwa-Bachmann announced settlements totaling $340 million from three banks for discriminatory lending.",0,0,1,1,0
-"Trade through U.S. ports reached $2.8 trillion in goods value during the previous calendar year.",0,0,0,1,0
-"Workers earning the federal minimum wage of $7.25 numbered 530,000 across the country.",0,0,0,1,0
-"Pell grant recipients totaled 6.3 million during the previous academic year, with average awards of $4,810.",0,0,0,1,1
-"Student loan balances reached $1.74 trillion across 43 million borrowers nationwide.",0,0,0,1,1
-"Senator Kalliope Whitfield-Iyer introduced legislation forgiving $58 billion in public service loan debt.",0,0,0,1,1
-"Reading proficiency among fourth-graders fell to 31 percent on the most recent NAEP assessment.",0,0,0,0,1
-"K-12 public school enrollment dropped to 49.4 million, a 1.4 percent decline over two years.",0,0,0,0,1
-"Federal Title I funding totaled $18.4 billion across 60,000 schools during the most recent fiscal year.",0,0,0,0,1
-"Representative Saskia Vrolijk voted to expand the Pell grant maximum to $13,000 per academic year.",0,0,0,1,1
-"Charter school enrollment grew to 3.7 million students across 7,800 schools nationwide.",0,0,0,0,1
-"Governor Aritra Davenport-Lopez signed a bill increasing per-pupil funding by $1,400 over two years.",0,0,0,1,1
-"Universal pre-K programs in 14 states served 1.4 million four-year-olds during the previous year.",0,0,0,0,1
-"Teacher vacancies hit 55,000 unfilled positions at the start of the most recent academic year.",0,0,0,0,1
-"FAFSA completion rates dropped to 49 percent among 3.4 million graduating high school seniors.",0,0,0,0,1
-"AG Cordelia Achebe-Steinberg filed suit against three for-profit colleges over $228 million in deceptive practices.",0,0,1,1,1
-"Community college enrollment rose 2.1 percent to 6.1 million students during the most recent term.",0,0,0,0,1
-"Senator Pendragon Marchetti-Rao voted to expand the child tax credit to $3,600 per child.",0,0,0,1,1
-"Federal funding for Head Start reached $12 billion serving 793,000 children during the most recent year.",0,0,0,1,1
-"Representative Linnea Boateng-Schultz introduced legislation creating $14 billion in workforce training tax credits.",0,0,0,1,1
-"School-based health clinics served 6.2 million students at 2,584 sites nationwide last year.",0,1,0,0,1
-"Federal carbon emissions fell 3.1 percent year over year, totaling 5.6 billion metric tons in 2023.",0,0,0,0,0
-"Defense spending consumed $886 billion, or 14 percent, of the federal budget during the most recent fiscal year.",0,0,0,0,0
+"claim_text","immigration","healthcare","crime","economy","education","legal_political","elections","foreign_policy"
+"The administration approved 487,000 employment-based visas during the most recent fiscal year, a 12 percent increase.","1","0","0","0","0","0","0","0"
+"Senator Henrik Voss introduced legislation expanding refugee admissions to 125,000 annually starting in 2025.","1","0","0","0","0","0","0","0"
+"Border Patrol arrested 2.4 million individuals during the most recent twelve-month enforcement window.","1","0","0","0","0","0","0","0"
+"USCIS reduced its asylum interview backlog from 1.6 million to 1.1 million cases over 18 months.","1","0","0","0","0","0","0","0"
+"Representative Annette Pulaski voted against allocating $14 billion in supplemental border security funding.","1","0","0","1","0","0","0","0"
+"H-1B petitions filed in fiscal year 2024 totaled 781,000 against an annual cap of 85,000.","1","0","0","1","0","0","0","0"
+"Governor Tomas Reichert deployed 3,200 state National Guard troops to assist with federal operations.","1","0","0","0","0","0","0","0"
+"The administration paroled 240,000 individuals into the country under three humanitarian programs.","1","0","0","0","0","0","0","0"
+"Detained migrants spent an average of 47 days in ICE custody during the most recent fiscal year.","1","0","0","0","0","0","0","0"
+"Senator Ileana Voskanyan voted to fund 18,000 additional immigration judges over a five-year period.","1","0","0","0","0","0","0","0"
+"Customs and Border Protection seized 27,400 pounds of fentanyl at official crossings last year.","1","0","1","0","0","0","0","0"
+"Refugee resettlement agencies received $1.2 billion in federal funding during the most recent fiscal year.","1","0","0","1","0","0","0","0"
+"The asylum officer corps grew to 4,800 personnel after a hiring surge of 1,400 positions.","1","0","0","0","0","0","0","0"
+"AG Mireya Calderon-Schultz announced 41 indictments in a $32 million human smuggling enterprise.","1","0","1","0","0","0","0","0"
+"Mayor Ezekiel Tanaka announced that the city would absorb 6,200 newly arrived migrants over three months.","1","0","0","0","0","0","0","0"
+"Premiums for benchmark ACA plans rose 7.4 percent on average for the upcoming plan year.","0","1","0","0","0","0","0","0"
+"Medicare drug price negotiations targeted 10 medications projected to save $7.4 billion annually.","0","1","0","1","0","0","0","0"
+"Hospital systems reported $42 billion in uncompensated care costs during the previous calendar year.","0","1","0","1","0","0","0","0"
+"Senator Wilhelmina Stoltzfus introduced legislation funding 14,000 new primary care residency slots over five years.","0","1","0","0","0","0","0","0"
+"FDA approved 55 novel drug applications and 18 biosimilars during the previous calendar year.","0","1","0","0","0","0","0","0"
+"Maternal mortality rates climbed to 32.9 deaths per 100,000 live births last year.","0","1","0","0","0","0","0","0"
+"Representative Bartolomeo Aguirre voted to expand Medicaid telehealth permanently at a cost of $4.2 billion.","0","1","0","1","0","0","0","0"
+"Mental health crisis hotlines handled 4.8 million calls during the first full year of operation.","0","1","0","0","0","0","0","0"
+"The 988 Suicide and Crisis Lifeline received $501 million in federal funding during the most recent year.","0","1","0","1","0","0","0","0"
+"Insulin copays dropped to $35 per month for 3.4 million Medicare beneficiaries.","0","1","0","0","0","0","0","0"
+"Hospital closures hit 47 rural facilities during the previous fiscal year, displacing 28,000 patients.","0","1","0","0","0","0","0","0"
+"Governor Sanjay Whitfield-Park signed legislation expanding Medicaid coverage to 410,000 additional adults.","0","1","0","1","0","0","0","0"
+"AG Caetana Brushwood-Vargas filed civil charges against three insurers in a $94 million claims-denial scheme.","0","1","1","0","0","0","0","0"
+"Drug overdose deaths declined 4.1 percent nationwide, the first decrease in five years.","0","1","1","0","0","0","0","0"
+"The Indian Health Service expanded its facility network by 22 sites serving 380,000 additional members.","0","1","0","0","0","0","0","0"
+"Federal indictments for fentanyl trafficking rose 41 percent to 8,400 cases during the previous fiscal year.","0","0","1","0","0","0","0","0"
+"Violent crime in the 50 largest cities declined 8.2 percent during the first three quarters.","0","0","1","0","0","0","0","0"
+"Federal Bureau of Prisons reduced its population to 158,000, a 14 percent decrease over five years.","0","0","1","0","0","0","0","0"
+"Senator Calliope Rinaldi voted to expand federal grants for body cameras by $480 million.","0","0","1","0","0","0","0","0"
+"Recidivism rates within three years of release dropped to 38 percent in the most recent cohort.","0","0","1","0","0","0","0","0"
+"AG Pendleton Aiyappa announced 142 federal indictments in a $640 million Medicare fraud scheme.","0","1","1","0","0","0","0","0"
+"Police staffing nationwide fell 8 percent below authorized levels, leaving 47,000 positions unfilled.","0","0","1","0","0","0","0","0"
+"Federal law enforcement officers conducted 2.1 million arrests during the most recent fiscal year.","0","0","1","0","0","0","0","0"
+"Hate crimes reported to the FBI rose 19 percent to 11,634 incidents nationwide last year.","0","0","1","0","0","0","0","0"
+"Representative Saoirse Niedermeyer voted against expanding the federal death penalty to additional offenses.","0","0","1","0","0","0","0","0"
+"State and local governments spent $115 billion on policing during the most recent fiscal year.","0","0","1","1","0","0","0","0"
+"Pretrial detention populations declined 14 percent across 22 reform jurisdictions over three years.","0","0","1","0","0","0","0","0"
+"Governor Eunmi Sundberg-Park signed legislation funding 1,200 new public defender positions statewide.","0","0","1","1","0","0","0","0"
+"Inflation cooled to 3.1 percent annualized over the trailing twelve months.","0","0","0","1","0","0","0","0"
+"Manufacturing payrolls added 38,000 jobs during the third quarter, exceeding consensus forecasts of 22,000.","0","0","0","1","0","0","0","0"
+"GDP grew at an annualized rate of 4.9 percent during the most recent quarter, the fastest in two years.","0","0","0","1","0","0","0","0"
+"Federal Reserve held the federal funds rate at 5.5 percent for the third consecutive meeting.","0","0","0","1","0","0","0","0"
+"Senator Octavian Marchetti voted against extending the 2017 tax cuts at a projected cost of $4.6 trillion.","0","0","0","1","0","0","0","0"
+"The federal deficit widened to $1.7 trillion in fiscal year 2023, an 8 percent increase year over year.","0","0","0","1","0","0","0","0"
+"Median household income rose to $74,580 last year, a 1.6 percent gain after inflation.","0","0","0","1","0","0","0","0"
+"Representative Velvet Okonkwo-Reilly co-sponsored a bill creating $48 billion in clean-energy manufacturing tax credits.","0","0","0","1","0","0","0","0"
+"Mortgage rates averaged 7.2 percent during the previous quarter, the highest in 22 years.","0","0","0","1","0","0","0","0"
+"Small business applications hit 5.5 million during the previous calendar year, a record high.","0","0","0","1","0","0","0","0"
+"AG Yusra Ezenwa-Bachmann announced settlements totaling $340 million from three banks for discriminatory lending.","0","0","1","1","0","0","0","0"
+"Trade through U.S. ports reached $2.8 trillion in goods value during the previous calendar year.","0","0","0","1","0","0","0","0"
+"Workers earning the federal minimum wage of $7.25 numbered 530,000 across the country.","0","0","0","1","0","0","0","0"
+"Pell grant recipients totaled 6.3 million during the previous academic year, with average awards of $4,810.","0","0","0","1","1","0","0","0"
+"Student loan balances reached $1.74 trillion across 43 million borrowers nationwide.","0","0","0","1","1","0","0","0"
+"Senator Kalliope Whitfield-Iyer introduced legislation forgiving $58 billion in public service loan debt.","0","0","0","1","1","0","0","0"
+"Reading proficiency among fourth-graders fell to 31 percent on the most recent NAEP assessment.","0","0","0","0","1","0","0","0"
+"K-12 public school enrollment dropped to 49.4 million, a 1.4 percent decline over two years.","0","0","0","0","1","0","0","0"
+"Federal Title I funding totaled $18.4 billion across 60,000 schools during the most recent fiscal year.","0","0","0","0","1","0","0","0"
+"Representative Saskia Vrolijk voted to expand the Pell grant maximum to $13,000 per academic year.","0","0","0","1","1","0","0","0"
+"Charter school enrollment grew to 3.7 million students across 7,800 schools nationwide.","0","0","0","0","1","0","0","0"
+"Governor Aritra Davenport-Lopez signed a bill increasing per-pupil funding by $1,400 over two years.","0","0","0","1","1","0","0","0"
+"Universal pre-K programs in 14 states served 1.4 million four-year-olds during the previous year.","0","0","0","0","1","0","0","0"
+"Teacher vacancies hit 55,000 unfilled positions at the start of the most recent academic year.","0","0","0","0","1","0","0","0"
+"FAFSA completion rates dropped to 49 percent among 3.4 million graduating high school seniors.","0","0","0","0","1","0","0","0"
+"AG Cordelia Achebe-Steinberg filed suit against three for-profit colleges over $228 million in deceptive practices.","0","0","1","1","1","0","0","0"
+"Community college enrollment rose 2.1 percent to 6.1 million students during the most recent term.","0","0","0","0","1","0","0","0"
+"Senator Pendragon Marchetti-Rao voted to expand the child tax credit to $3,600 per child.","0","0","0","1","1","0","0","0"
+"Federal funding for Head Start reached $12 billion serving 793,000 children during the most recent year.","0","0","0","1","1","0","0","0"
+"Representative Linnea Boateng-Schultz introduced legislation creating $14 billion in workforce training tax credits.","0","0","0","1","1","0","0","0"
+"School-based health clinics served 6.2 million students at 2,584 sites nationwide last year.","0","1","0","0","1","0","0","0"
+"Federal carbon emissions fell 3.1 percent year over year, totaling 5.6 billion metric tons in 2023.","0","0","0","0","0","0","0","0"
+"Defense spending consumed $886 billion, or 14 percent, of the federal budget during the most recent fiscal year.","0","0","0","0","0","0","0","0"

@@ -1,79 +1,79 @@
 # Constraint: mixed — single-label edge cases within each topic to broaden topic vocabulary
-claim_text,immigration,healthcare,crime,economy,education
-"Asylum officers approved 47 percent of credible fear interviews conducted at the southern border last fiscal year.",1,0,0,0,0
-"The Diversity Visa Lottery received 19 million entries during its most recent registration window.",1,0,0,0,0
-"Senator Branham introduced legislation creating a special immigrant visa category for climate-displaced individuals.",1,0,0,0,0
-"USCIS announced an expansion of premium processing for naturalization applications submitted by military service members.",1,0,0,0,0
-"The Special Immigrant Juvenile classification protected 8,400 unaccompanied minors from removal proceedings last year.",1,0,0,0,0
-"Federal regulations governing employment authorization for asylum applicants extended waiting periods to 180 days.",1,0,0,0,0
-"Representative Solano voted to expand the U visa program for crime victims cooperating with law enforcement investigations.",1,0,0,0,0
-"The TPS designation for individuals from a Caribbean nation was extended for an additional eighteen months.",1,0,0,0,0
-"Visa overstay rates among Schengen Area travelers remained below 0.7 percent during the most recent reporting period.",1,0,0,0,0
-"Refugee resettlement agencies operated in 197 communities across forty-three states during the previous fiscal year.",1,0,0,0,0
-"Customs and Border Protection announced new training requirements for officers conducting credible fear interviews at ports of entry.",1,0,0,0,0
-"The H-2A agricultural visa program processed 384,000 worker certifications during the previous fiscal year.",1,0,0,0,0
-"Asylum case backlogs in immigration courts exceeded 2.4 million pending cases at the end of the most recent quarter.",1,0,0,0,0
-"Federal funding for legal orientation programs in immigration detention reached $42 million during the most recent year.",1,0,0,0,0
-"Senator Aldermann's bill would expand work authorization for spouses of E-2 treaty investor visa holders.",1,0,0,0,0
-"The Veterans Health Administration expanded telehealth specialty care to 87 rural community-based outpatient clinics.",0,1,0,0,0
-"Federal regulators announced an investigation into compounding pharmacy violations affecting 14 specialty drugs.",0,1,0,0,0
-"CMS finalized rules expanding hospice eligibility for patients with serious chronic conditions beyond traditional six-month prognoses.",0,1,0,0,0
-"Senator Tillman introduced legislation creating a federal grant program for community paramedicine in rural counties.",0,1,0,0,0
-"The Indian Health Service announced expanded behavioral health services through telemedicine partnerships with eight academic medical centers.",0,1,0,0,0
-"Hospital systems in three Northeastern states reported successful implementation of community health worker integration programs.",0,1,0,0,0
-"Federal funding for graduate medical education residencies remained capped at 1996 levels for most teaching hospitals.",0,1,0,0,0
-"Representative Whitcombe co-sponsored a bill expanding Medicare coverage of comprehensive geriatric assessment services.",0,1,0,0,0
-"State Medicaid agencies in fourteen jurisdictions adopted new prior authorization requirements for high-cost specialty medications.",0,1,0,0,0
-"The FDA approved a novel gene therapy for sickle cell disease at an estimated cost of $2.2 million per patient.",0,1,0,0,0
-"AG Schweitzer announced charges against four telehealth providers in a fraudulent prescribing scheme affecting Medicare beneficiaries.",0,1,0,0,0
-"Federal mental health parity enforcement actions resulted in $24 million in penalties against major insurers last year.",0,1,0,0,0
-"Senator Yarborough voted to expand FDA authority over compounded medications produced by 503B outsourcing facilities.",0,1,0,0,0
-"The Department of Health and Human Services announced new initiatives addressing maternal mortality among Black women.",0,1,0,0,0
-"Pediatric mental health emergency department visits rose 34 percent over the previous five-year reporting period.",0,1,0,0,0
-"Federal prosecutors charged 22 individuals in a $640 million Medicare durable medical equipment fraud scheme.",0,0,1,0,0
-"The Bureau of Justice Statistics reported a 14 percent decline in property crime victimization rates over five years.",0,0,1,0,0
-"Senator Meriwether co-sponsored legislation expanding federal grants for community-based crime victim services programs.",0,0,1,0,0
-"State sentencing commissions in eight jurisdictions adopted new guidelines for resentencing individuals serving life sentences.",0,0,1,0,0
-"Federal courts continued resolving challenges to state laws governing the procurement of execution drugs.",0,0,1,0,0
-"Representative Halloran introduced a bill creating federal grants for forensic science laboratory accreditation programs.",0,0,1,0,0
-"AG Pavlovic announced indictments against a regional securities fraud enterprise involving 14 unregistered investment advisors.",0,0,1,0,0
-"Mayor Akinwumi expanded a community court program addressing low-level offenses through restorative justice partnerships.",0,0,1,0,0
-"The U.S. Sentencing Commission proposed amendments reducing recommended ranges for certain non-violent drug offenses.",0,0,1,0,0
-"Federal funding for community violence intervention programs reached $194 million during the most recent fiscal year.",0,0,1,0,0
-"Governor Krasniqi signed legislation expanding access to expungement for individuals with old non-violent convictions.",0,0,1,0,0
-"AG Branfield filed federal racketeering charges against a multi-state stolen vehicle distribution enterprise.",0,0,1,0,0
-"The Department of Justice announced new pattern-or-practice investigations into police departments in three large cities.",0,0,1,0,0
-"Senator Steiger voted to expand federal grants for body-worn camera programs in jurisdictions over 50,000 residents.",0,0,1,0,0
-"Federal prison populations included 14,200 individuals serving sentences for non-violent drug offenses.",0,0,1,0,0
-"State juvenile detention populations declined 38 percent over the previous decade across forty-one reporting jurisdictions.",0,0,1,0,0
-"Labor force participation among prime-age workers reached 83.9 percent during the most recent monthly report.",0,0,0,1,0
-"The Producer Price Index rose 1.6 percent year over year during the most recent reporting period.",0,0,0,1,0
-"Senator Drumheller introduced legislation extending the renewable energy investment tax credit through 2035.",0,0,0,1,0
-"The trade-weighted U.S. dollar index declined 4.2 percent against major currencies over the most recent quarter.",0,0,0,1,0
-"Representative Ostermeier co-sponsored a bill expanding the federal R&D tax credit for small businesses.",0,0,0,1,0
-"Federal Reserve research analyzed the effects of remote work adoption on commercial real estate vacancy rates.",0,0,0,1,0
-"AG Wessinger filed antitrust complaints against three major poultry processors for coordinated wage suppression practices.",0,0,0,1,0
-"The Bureau of Economic Analysis reported real disposable personal income rose 1.4 percent during the most recent quarter.",0,0,0,1,0
-"Governor Quincy proposed eliminating the state's franchise tax over a five-year phase-in period.",0,0,0,1,0
-"Federal funding for workforce development programs administered through state agencies totaled $4.8 billion last year.",0,0,0,1,0
-"Senator Vannevar voted to advance legislation creating tax credits for advanced manufacturing in critical mineral processing.",0,0,0,1,0
-"The Federal Trade Commission announced new investigations into anti-competitive practices in agricultural input markets.",0,0,0,1,0
-"Representative Albemarle introduced a bill expanding the Earned Income Tax Credit for childless workers.",0,0,0,1,0
-"Federal Reserve regional surveys reported continued strength in services sector activity across most districts.",0,0,0,1,0
-"Manufacturing capacity utilization stood at 78.4 percent during the most recent monthly industrial production report.",0,0,0,1,0
-"Higher education enrollment dropped 8 percent across community colleges nationwide over the previous five years.",0,0,0,0,1
-"Federal funding for HBCUs reached $5.8 billion during the most recent fiscal year across multiple programs.",0,0,0,0,1
-"Senator Drummond introduced legislation expanding federal protections for academic freedom at public universities.",0,0,0,0,1
-"State teacher certification reciprocity agreements expanded to cover all fifty states during the previous year.",0,0,0,0,1
-"Representative Yoshida co-sponsored a bill creating tax credits for employers offering childcare benefits to workers with school-age children.",0,0,0,1,1
-"AG Treadwell announced settlements with three educational technology companies over privacy violations affecting student data.",0,0,1,0,1
-"Federal student loan delinquency rates climbed to 11.2 percent during the most recent reporting period.",0,0,0,1,1
-"Mayor Cardenas announced expanded summer learning programs reaching 14,000 elementary school students citywide.",0,0,0,0,1
-"State universities in eleven jurisdictions adopted new policies governing legacy admissions practices.",0,0,0,0,1
-"The Department of Education announced new oversight measures for accreditation agencies covering for-profit institutions.",0,0,0,0,1
-"Senator Pendergast voted to expand federal grants for apprenticeship programs in skilled trades.",0,0,0,1,1
-"Representative Holzapfel introduced legislation creating a federal grant for paid student teaching residencies.",0,0,0,0,1
-"Federal regulators issued new guidance on Title IX procedures governing campus disciplinary processes.",0,0,1,0,1
-"State legislatures in nine jurisdictions debated new requirements for school district financial transparency reporting.",0,0,0,0,1
-"Governor Mountbatten signed legislation expanding state-funded scholarships for students pursuing teaching credentials.",0,0,0,0,1
-"AG Brzezinski filed civil rights complaints against three school districts over disciplinary disparities affecting students with disabilities.",0,0,1,0,1
+"claim_text","immigration","healthcare","crime","economy","education","legal_political","elections","foreign_policy"
+"Asylum officers approved 47 percent of credible fear interviews conducted at the southern border last fiscal year.","1","0","0","0","0","0","0","0"
+"The Diversity Visa Lottery received 19 million entries during its most recent registration window.","1","0","0","0","0","0","0","0"
+"Senator Branham introduced legislation creating a special immigrant visa category for climate-displaced individuals.","1","0","0","0","0","0","0","0"
+"USCIS announced an expansion of premium processing for naturalization applications submitted by military service members.","1","0","0","0","0","0","0","0"
+"The Special Immigrant Juvenile classification protected 8,400 unaccompanied minors from removal proceedings last year.","1","0","0","0","0","0","0","0"
+"Federal regulations governing employment authorization for asylum applicants extended waiting periods to 180 days.","1","0","0","0","0","0","0","0"
+"Representative Solano voted to expand the U visa program for crime victims cooperating with law enforcement investigations.","1","0","0","0","0","0","0","0"
+"The TPS designation for individuals from a Caribbean nation was extended for an additional eighteen months.","1","0","0","0","0","0","0","0"
+"Visa overstay rates among Schengen Area travelers remained below 0.7 percent during the most recent reporting period.","1","0","0","0","0","0","0","0"
+"Refugee resettlement agencies operated in 197 communities across forty-three states during the previous fiscal year.","1","0","0","0","0","0","0","0"
+"Customs and Border Protection announced new training requirements for officers conducting credible fear interviews at ports of entry.","1","0","0","0","0","0","0","0"
+"The H-2A agricultural visa program processed 384,000 worker certifications during the previous fiscal year.","1","0","0","0","0","0","0","0"
+"Asylum case backlogs in immigration courts exceeded 2.4 million pending cases at the end of the most recent quarter.","1","0","0","0","0","0","0","0"
+"Federal funding for legal orientation programs in immigration detention reached $42 million during the most recent year.","1","0","0","0","0","0","0","0"
+"Senator Aldermann's bill would expand work authorization for spouses of E-2 treaty investor visa holders.","1","0","0","0","0","0","0","0"
+"The Veterans Health Administration expanded telehealth specialty care to 87 rural community-based outpatient clinics.","0","1","0","0","0","0","0","0"
+"Federal regulators announced an investigation into compounding pharmacy violations affecting 14 specialty drugs.","0","1","0","0","0","0","0","0"
+"CMS finalized rules expanding hospice eligibility for patients with serious chronic conditions beyond traditional six-month prognoses.","0","1","0","0","0","0","0","0"
+"Senator Tillman introduced legislation creating a federal grant program for community paramedicine in rural counties.","0","1","0","0","0","0","0","0"
+"The Indian Health Service announced expanded behavioral health services through telemedicine partnerships with eight academic medical centers.","0","1","0","0","0","0","0","0"
+"Hospital systems in three Northeastern states reported successful implementation of community health worker integration programs.","0","1","0","0","0","0","0","0"
+"Federal funding for graduate medical education residencies remained capped at 1996 levels for most teaching hospitals.","0","1","0","0","0","0","0","0"
+"Representative Whitcombe co-sponsored a bill expanding Medicare coverage of comprehensive geriatric assessment services.","0","1","0","0","0","0","0","0"
+"State Medicaid agencies in fourteen jurisdictions adopted new prior authorization requirements for high-cost specialty medications.","0","1","0","0","0","0","0","0"
+"The FDA approved a novel gene therapy for sickle cell disease at an estimated cost of $2.2 million per patient.","0","1","0","0","0","0","0","0"
+"AG Schweitzer announced charges against four telehealth providers in a fraudulent prescribing scheme affecting Medicare beneficiaries.","0","1","0","0","0","0","0","0"
+"Federal mental health parity enforcement actions resulted in $24 million in penalties against major insurers last year.","0","1","0","0","0","0","0","0"
+"Senator Yarborough voted to expand FDA authority over compounded medications produced by 503B outsourcing facilities.","0","1","0","0","0","0","0","0"
+"The Department of Health and Human Services announced new initiatives addressing maternal mortality among Black women.","0","1","0","0","0","0","0","0"
+"Pediatric mental health emergency department visits rose 34 percent over the previous five-year reporting period.","0","1","0","0","0","0","0","0"
+"Federal prosecutors charged 22 individuals in a $640 million Medicare durable medical equipment fraud scheme.","0","0","1","0","0","0","0","0"
+"The Bureau of Justice Statistics reported a 14 percent decline in property crime victimization rates over five years.","0","0","1","0","0","0","0","0"
+"Senator Meriwether co-sponsored legislation expanding federal grants for community-based crime victim services programs.","0","0","1","0","0","0","0","0"
+"State sentencing commissions in eight jurisdictions adopted new guidelines for resentencing individuals serving life sentences.","0","0","1","0","0","0","0","0"
+"Federal courts continued resolving challenges to state laws governing the procurement of execution drugs.","0","0","1","0","0","0","0","0"
+"Representative Halloran introduced a bill creating federal grants for forensic science laboratory accreditation programs.","0","0","1","0","0","0","0","0"
+"AG Pavlovic announced indictments against a regional securities fraud enterprise involving 14 unregistered investment advisors.","0","0","1","0","0","0","0","0"
+"Mayor Akinwumi expanded a community court program addressing low-level offenses through restorative justice partnerships.","0","0","1","0","0","0","0","0"
+"The U.S. Sentencing Commission proposed amendments reducing recommended ranges for certain non-violent drug offenses.","0","0","1","0","0","0","0","0"
+"Federal funding for community violence intervention programs reached $194 million during the most recent fiscal year.","0","0","1","0","0","0","0","0"
+"Governor Krasniqi signed legislation expanding access to expungement for individuals with old non-violent convictions.","0","0","1","0","0","0","0","0"
+"AG Branfield filed federal racketeering charges against a multi-state stolen vehicle distribution enterprise.","0","0","1","0","0","0","0","0"
+"The Department of Justice announced new pattern-or-practice investigations into police departments in three large cities.","0","0","1","0","0","0","0","0"
+"Senator Steiger voted to expand federal grants for body-worn camera programs in jurisdictions over 50,000 residents.","0","0","1","0","0","0","0","0"
+"Federal prison populations included 14,200 individuals serving sentences for non-violent drug offenses.","0","0","1","0","0","0","0","0"
+"State juvenile detention populations declined 38 percent over the previous decade across forty-one reporting jurisdictions.","0","0","1","0","0","0","0","0"
+"Labor force participation among prime-age workers reached 83.9 percent during the most recent monthly report.","0","0","0","1","0","0","0","0"
+"The Producer Price Index rose 1.6 percent year over year during the most recent reporting period.","0","0","0","1","0","0","0","0"
+"Senator Drumheller introduced legislation extending the renewable energy investment tax credit through 2035.","0","0","0","1","0","0","0","0"
+"The trade-weighted U.S. dollar index declined 4.2 percent against major currencies over the most recent quarter.","0","0","0","1","0","0","0","0"
+"Representative Ostermeier co-sponsored a bill expanding the federal R&D tax credit for small businesses.","0","0","0","1","0","0","0","0"
+"Federal Reserve research analyzed the effects of remote work adoption on commercial real estate vacancy rates.","0","0","0","1","0","0","0","0"
+"AG Wessinger filed antitrust complaints against three major poultry processors for coordinated wage suppression practices.","0","0","0","1","0","0","0","0"
+"The Bureau of Economic Analysis reported real disposable personal income rose 1.4 percent during the most recent quarter.","0","0","0","1","0","0","0","0"
+"Governor Quincy proposed eliminating the state's franchise tax over a five-year phase-in period.","0","0","0","1","0","0","0","0"
+"Federal funding for workforce development programs administered through state agencies totaled $4.8 billion last year.","0","0","0","1","0","0","0","0"
+"Senator Vannevar voted to advance legislation creating tax credits for advanced manufacturing in critical mineral processing.","0","0","0","1","0","0","0","0"
+"The Federal Trade Commission announced new investigations into anti-competitive practices in agricultural input markets.","0","0","0","1","0","0","0","0"
+"Representative Albemarle introduced a bill expanding the Earned Income Tax Credit for childless workers.","0","0","0","1","0","0","0","0"
+"Federal Reserve regional surveys reported continued strength in services sector activity across most districts.","0","0","0","1","0","0","0","0"
+"Manufacturing capacity utilization stood at 78.4 percent during the most recent monthly industrial production report.","0","0","0","1","0","0","0","0"
+"Higher education enrollment dropped 8 percent across community colleges nationwide over the previous five years.","0","0","0","0","1","0","0","0"
+"Federal funding for HBCUs reached $5.8 billion during the most recent fiscal year across multiple programs.","0","0","0","0","1","0","0","0"
+"Senator Drummond introduced legislation expanding federal protections for academic freedom at public universities.","0","0","0","0","1","0","0","0"
+"State teacher certification reciprocity agreements expanded to cover all fifty states during the previous year.","0","0","0","0","1","0","0","0"
+"Representative Yoshida co-sponsored a bill creating tax credits for employers offering childcare benefits to workers with school-age children.","0","0","0","1","1","0","0","0"
+"AG Treadwell announced settlements with three educational technology companies over privacy violations affecting student data.","0","0","1","0","1","0","0","0"
+"Federal student loan delinquency rates climbed to 11.2 percent during the most recent reporting period.","0","0","0","1","1","0","0","0"
+"Mayor Cardenas announced expanded summer learning programs reaching 14,000 elementary school students citywide.","0","0","0","0","1","0","0","0"
+"State universities in eleven jurisdictions adopted new policies governing legacy admissions practices.","0","0","0","0","1","0","0","0"
+"The Department of Education announced new oversight measures for accreditation agencies covering for-profit institutions.","0","0","0","0","1","0","0","0"
+"Senator Pendergast voted to expand federal grants for apprenticeship programs in skilled trades.","0","0","0","1","1","0","0","0"
+"Representative Holzapfel introduced legislation creating a federal grant for paid student teaching residencies.","0","0","0","0","1","0","0","0"
+"Federal regulators issued new guidance on Title IX procedures governing campus disciplinary processes.","0","0","1","0","1","0","0","0"
+"State legislatures in nine jurisdictions debated new requirements for school district financial transparency reporting.","0","0","0","0","1","0","0","0"
+"Governor Mountbatten signed legislation expanding state-funded scholarships for students pursuing teaching credentials.","0","0","0","0","1","0","0","0"
+"AG Brzezinski filed civil rights complaints against three school districts over disciplinary disparities affecting students with disabilities.","0","0","1","0","1","0","0","0"

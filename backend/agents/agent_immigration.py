@@ -19,6 +19,10 @@ class ImmigrationAgent(AllowlistedAgent):
         "UNHCR",
         "BLS",
         "Customs and Border Protection",
+        "ICE",
+        "DHS Office of Immigration Statistics",
+        "EOIR",
+        "Cato Institute",
     })
 
 

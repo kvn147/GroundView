@@ -45,9 +45,13 @@ def _zero_probs() -> dict[str, float]:
 
 
 def route(
-    claim_text: str, threshold: float = 0.5, *, mask_speakers: bool = True
+    claim_text: str, threshold: float | None = None, *, mask_speakers: bool = True
 ) -> RoutingDecision:
     """Route a claim to zero or more canonical topics.
+
+    ``threshold=None`` (the default) means use ``TOPIC_THRESHOLDS`` from
+    ``decision.py``. Pass a float to override every topic with one
+    global cutoff (used by tests and the eval threshold sweep).
 
     ``mask_speakers`` must match the training-time setting; the default
     (True) matches ``train.py``'s default. Keyword matching always runs

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 
-RoutingMethod = Literal["keyword", "classifier", "no_route"]
+RoutingMethod = Literal["keyword", "classifier", "hybrid", "no_route"]
 
 
 @dataclass

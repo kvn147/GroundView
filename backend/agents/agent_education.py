@@ -17,6 +17,8 @@ class EducationAgent(AllowlistedAgent):
         "BLS",
         "Census Bureau",
         "Pew Research Center",
+        "Department of Education",
+        "Brookings Institution",
     })
 
 

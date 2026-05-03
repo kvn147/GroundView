@@ -18,6 +18,9 @@ class HealthcareAgent(AllowlistedAgent):
         "WHO",
         "BLS",
         "KFF",
+        "CMS",
+        "AHRQ",
+        "Commonwealth Fund",
     })
 
 

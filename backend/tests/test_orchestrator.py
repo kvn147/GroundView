@@ -62,7 +62,7 @@ async def test_multi_topic_runs_one_agent_per_topic() -> None:
 @pytest.mark.asyncio
 async def test_unrouted_topic_is_recorded_not_crashed() -> None:
     """A topic that doesn't map to a registered agent (e.g. a future
-    addition like ``foreign_policy``) must not crash the pipeline."""
+    addition like ``environment``) must not crash the pipeline."""
     fake = FakeLLM(responses={
         "anthropic/claude-haiku-4-5": json.dumps({"checked": False}),
         "google/gemini-2.5-flash": json.dumps([
@@ -71,11 +71,11 @@ async def test_unrouted_topic_is_recorded_not_crashed() -> None:
     })
     orch = AgentOrchestrator(llm=fake)
 
-    out = await orch.run("X.", routed_topics=["economy", "foreign_policy"])
+    out = await orch.run("X.", routed_topics=["economy", "environment"])
 
     assert len(out.results) == 1
     assert out.results[0].agent == "EconomyAgent"
-    assert out.unrouted_topics == ["foreign_policy"]
+    assert out.unrouted_topics == ["environment"]
 
 
 @pytest.mark.asyncio

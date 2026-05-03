@@ -127,8 +127,11 @@ def test_routing_decision_shape(trained_pipeline) -> None:
     )
     assert isinstance(decision, RoutingDecision)
     assert set(decision.keyword_scores.keys()) == set(TOPICS)
-    # classifier_probs is empty when keyword path fired; otherwise populated.
-    if decision.routing_method == "classifier":
+    # classifier_probs is populated whenever the classifier contributed
+    # to the decision: ``classifier`` (sole driver) and ``hybrid``
+    # (added topics on top of keyword). Pure ``keyword`` and
+    # ``no_route`` leave it empty.
+    if decision.routing_method in ("classifier", "hybrid"):
         assert set(decision.classifier_probs.keys()) == set(TOPICS)
     else:
         assert decision.classifier_probs == {}

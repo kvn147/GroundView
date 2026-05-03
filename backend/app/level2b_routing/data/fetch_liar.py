@@ -1,5 +1,5 @@
 """
-Fetch LIAR dataset, remap to project's 5-topic taxonomy and 5-verdict scale,
+Fetch LIAR dataset, remap to project's 8-topic taxonomy and 5-verdict scale,
 and produce two CSVs matching the existing synthetic_train_*.csv schema:
 
   liar_train.csv  — bulk corpus for routing classifier training
@@ -11,12 +11,15 @@ Usage:
 
 The LIAR dataset (Wang 2017) is ~12.8K PolitiFact claims with 6-way verdicts and
 free-form subject tags. We map subjects to {immigration, healthcare, crime,
-economy, education} and drop rows that don't fit any of the 5. Verdicts collapse
-to {True, Mostly True, Mixed, Mostly False, False}.
+economy, education, legal_political, elections, foreign_policy} and drop rows
+that don't fit any of the 8. Verdicts collapse to {True, Mostly True, Mixed,
+Mostly False, False}.
 
 Topic mapping is a hand-curated allowlist of PolitiFact subject substrings.
-Anything not matched is excluded — we'd rather have 4K clean labels than 12K
-noisy ones.
+Anything not matched is excluded — we'd rather have 5K clean labels than 12K
+noisy ones. Multi-label is the norm: e.g. ``criminal-justice`` claims map to
+both ``crime`` and ``legal_political``; ``terrorism`` claims that mention Iraq
+map to both ``foreign_policy``.
 """
 
 from __future__ import annotations
@@ -82,9 +85,35 @@ TOPIC_RULES: dict[str, list[str]] = {
         "school-choice", "charter-schools", "vouchers", "title-ix",
         "head-start", "pell-grants",
     ],
+    # Specific legal proceedings against public figures — distinct from
+    # ``crime`` (which is aggregate offense statistics). We deliberately
+    # do NOT include ``criminal-justice`` here even though it overlaps:
+    # double-labeling that tag bled probability mass between the two
+    # classes and dropped legal_political F1 to 0.51. Keeping
+    # criminal-justice as pure-``crime`` makes legal_political's positives
+    # cleaner (specific lawsuits / rulings / impeachments / ethics cases).
+    "legal_political": [
+        "legal-issues", "supreme-court", "impeachment", "ethics",
+    ],
+    # Election administration and campaigns. Deliberately excludes
+    # ``voting-record`` — that's a politician's *legislative* voting
+    # history, not election administration; it does not belong with the
+    # FEC/EAC allowlist of ElectionsAgent.
+    "elections": [
+        "elections", "campaign-finance", "campaign-advertising", "polls",
+        "redistricting",
+    ],
+    "foreign_policy": [
+        "foreign-policy", "military", "terrorism", "iraq", "afghanistan",
+        "china", "israel", "iran", "russia", "ukraine", "north-korea",
+        "syria",
+    ],
 }
 
-CANONICAL_TOPICS = ("immigration", "healthcare", "crime", "economy", "education")
+CANONICAL_TOPICS = (
+    "immigration", "healthcare", "crime", "economy", "education",
+    "legal_political", "elections", "foreign_policy",
+)
 
 
 def download_liar() -> dict[str, list[list[str]]]:

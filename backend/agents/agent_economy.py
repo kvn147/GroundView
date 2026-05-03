@@ -33,6 +33,10 @@ class EconomyAgent(AllowlistedAgent):
         "Census Bureau",
         "BLS",
         "OECD",
+        "CBO",
+        "IMF",
+        "Treasury Department",
+        "Tax Policy Center",
     })
 
 

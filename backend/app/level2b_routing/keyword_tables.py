@@ -31,6 +31,9 @@ _IMMIGRATION: TopicTable = {
     "keywords": [
         "border",
         "border wall",
+        "border crossing",
+        "border crossings",
+        "illegal crossing",
         "deportation",
         "deport",
         "asylum",
@@ -102,12 +105,18 @@ _CRIME: TopicTable = {
         "prison",
         "incarceration",
         "criminal justice",
+        "fentanyl",
+        "opioid",
+        "opioids",
+        "drug overdose",
     ],
     "regex_patterns": [
         re.compile(r"\bFBI\b"),
         re.compile(r"\bDOJ\b"),
         re.compile(r"\bUCR\b"),                       # Uniform Crime Reporting
         re.compile(r"crime\s+rate", re.IGNORECASE),
+        re.compile(r"\bfentanyl\b", re.IGNORECASE),
+        re.compile(r"\boverdose(?:s|d)?\b", re.IGNORECASE),
     ],
 }
 
@@ -171,12 +180,142 @@ _EDUCATION: TopicTable = {
 }
 
 
+# ---------------------------------------------------------------------------
+# legal_political — convictions, indictments, pardons, court rulings.
+# Distinct from ``crime`` (which is aggregate offense statistics):
+# this table targets named legal proceedings against public figures.
+# ---------------------------------------------------------------------------
+_LEGAL_POLITICAL: TopicTable = {
+    "keywords": [
+        "convicted",
+        "convicted felon",
+        "felon",
+        "felony",
+        "indicted",
+        "indictment",
+        "pardoned",
+        "pardon",
+        "prosecuted",
+        "prosecution",
+        "sentenced",
+        "guilty plea",
+        "pled guilty",
+        "pleaded guilty",
+        "found guilty",
+        "plea deal",
+        "plea bargain",
+        "lawsuit",
+        "subpoena",
+        "subpoenaed",
+        "impeached",
+        "impeachment",
+        "grand jury",
+        "deposition",
+        "court ruling",
+        "settled the lawsuit",
+    ],
+    "regex_patterns": [
+        re.compile(r"\bDOJ\b"),
+        re.compile(r"\bSupreme\s+Court\b", re.IGNORECASE),
+        re.compile(r"\bFEC\b"),                       # Federal Election Commission
+        re.compile(r"\bDistrict\s+Attorney\b", re.IGNORECASE),
+        re.compile(r"\bSpecial\s+Counsel\b", re.IGNORECASE),
+        re.compile(r"\bcourt\s+ruling\b", re.IGNORECASE),
+    ],
+}
+
+# ---------------------------------------------------------------------------
+# elections — voting, ballots, turnout, election administration.
+# Triggers on election-process language and named election bodies.
+# ---------------------------------------------------------------------------
+_ELECTIONS: TopicTable = {
+    "keywords": [
+        "ballot",
+        "ballots",
+        "vote",
+        "voter",
+        "voters",
+        "voter id",
+        "voter fraud",
+        "voter registration",
+        "election fraud",
+        "rigged election",
+        "stolen election",
+        "turnout",
+        "voter turnout",
+        "mail-in ballot",
+        "absentee ballot",
+        "recount",
+        "gerrymander",
+        "gerrymandering",
+        "primary election",
+        "general election",
+        "polling place",
+        "campaign finance",
+        "campaign contribution",
+        "campaign contributions",
+        "super pac",
+        "dark money",
+    ],
+    "regex_patterns": [
+        re.compile(r"\bFEC\b"),                       # Federal Election Commission
+        re.compile(r"\bElectoral\s+College\b", re.IGNORECASE),
+        re.compile(r"\bSecretary\s+of\s+State\b", re.IGNORECASE),
+        re.compile(r"\bvoting\s+rights\b", re.IGNORECASE),
+    ],
+}
+
+# ---------------------------------------------------------------------------
+# foreign_policy — wars, treaties, sanctions, foreign aid, alliances.
+# Triggers on diplomatic and military vocabulary plus named foreign
+# countries/blocs that frequently appear in U.S. political claims.
+# ---------------------------------------------------------------------------
+_FOREIGN_POLICY: TopicTable = {
+    "keywords": [
+        "treaty",
+        "treaties",
+        "sanctions",
+        "sanction",
+        "foreign aid",
+        "military aid",
+        "ukraine",
+        "russia",
+        "china",
+        "iran",
+        "north korea",
+        "israel",
+        "gaza",
+        "taiwan",
+        "afghanistan",
+        "iraq",
+        "ally",
+        "allies",
+        "diplomacy",
+        "diplomatic",
+        "foreign policy",
+        "intelligence agency",
+    ],
+    "regex_patterns": [
+        re.compile(r"\bNATO\b"),
+        re.compile(r"\bState\s+Department\b", re.IGNORECASE),
+        re.compile(r"\bDepartment\s+of\s+Defense\b", re.IGNORECASE),
+        re.compile(r"\bDoD\b"),
+        re.compile(r"\bUN\b"),                        # United Nations
+        re.compile(r"\bCIA\b"),
+        re.compile(r"\bPentagon\b", re.IGNORECASE),
+    ],
+}
+
+
 TABLES: dict[str, TopicTable] = {
     "immigration": _IMMIGRATION,
     "healthcare": _HEALTHCARE,
     "crime": _CRIME,
     "economy": _ECONOMY,
     "education": _EDUCATION,
+    "legal_political": _LEGAL_POLITICAL,
+    "elections": _ELECTIONS,
+    "foreign_policy": _FOREIGN_POLICY,
 }
 
 # Sanity guard: every canonical topic must have a table.
