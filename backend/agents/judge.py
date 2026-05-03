@@ -398,3 +398,91 @@ async def calculate_confidence_structured(
         "warning": warning,
         "details": details,
     }
+
+
+# ---------------------------------------------------------------------------
+# Opinion lean scorer — no LLM, pure arithmetic over SOURCE_METRICS
+# ---------------------------------------------------------------------------
+
+
+async def calculate_lean_structured(
+    opinion_text: str,
+    evidence_items,  # list[backend.contracts.EvidenceItem]
+) -> dict:
+    """Compute a political-lean score for an opinion statement.
+
+    For each ``EvidenceItem`` where ``stance`` is ``"agree"`` or
+    ``"disagree"``:
+
+      stance_sign  = +1 if agree, -1 if disagree
+      contribution = stance_sign * source_bias * source_trust
+
+    where ``source_bias`` and ``source_trust`` are resolved from
+    ``SOURCE_METRICS`` (the same registry ``load_news_sources()``
+    populates).  Items with ``stance == "unverifiable"`` or
+    ``stance is None`` are skipped and do not count toward the average.
+
+    Returns
+    -------
+    {
+        "lean_value":    float,   # mean(contributions), clamped [-1, +1]
+        "lean_label":    str,     # "Leans Left" | "Center / Neutral" | "Leans Right"
+        "confidence":    float,   # contributing / total items, clamped [0, 1]
+        "n_contributing": int,    # items with a clear stance
+        "n_total":       int,     # total items passed in
+        "details":       list,    # per-item breakdown
+    }
+    """
+    contributions: list[float] = []
+    details: list[dict] = []
+    n_total = len(evidence_items)
+
+    for item in evidence_items:
+        stance = getattr(item, "stance", None)
+        if stance not in ("agree", "disagree"):
+            details.append({
+                "source": item.source.name if item.source else "Unknown",
+                "stance": stance,
+                "contribution": 0.0,
+                "trust": None,
+                "bias": None,
+            })
+            continue
+
+        stance_sign = 1.0 if stance == "agree" else -1.0
+        source_name = item.source.name if item.source else "Unknown"
+        trust, bias = match_source_metrics(source_name)
+        contribution = stance_sign * bias * trust
+
+        contributions.append(contribution)
+        details.append({
+            "source": source_name,
+            "stance": stance,
+            "contribution": round(contribution, 4),
+            "trust": trust,
+            "bias": bias,
+        })
+
+    if not contributions:
+        lean_value = 0.0
+        lean_label = "Center / Neutral"
+        confidence = 0.0
+    else:
+        raw = sum(contributions) / len(contributions)
+        lean_value = max(-1.0, min(1.0, raw))
+        if lean_value < -0.3:
+            lean_label = "Leans Left"
+        elif lean_value > 0.3:
+            lean_label = "Leans Right"
+        else:
+            lean_label = "Center / Neutral"
+        confidence = round(len(contributions) / max(1, n_total), 3)
+
+    return {
+        "lean_value": round(lean_value, 3),
+        "lean_label": lean_label,
+        "confidence": confidence,
+        "n_contributing": len(contributions),
+        "n_total": n_total,
+        "details": details,
+    }
