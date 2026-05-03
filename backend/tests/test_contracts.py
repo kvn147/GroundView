@@ -20,13 +20,16 @@ from backend.contracts import (
     AnalyzeVideoResponse,
     Claim,
     EvidenceItem,
+    FrontendActivity,
     FrontendAggregatedSource,
+    FrontendClaim,
     FrontendSource,
     ScoredSource,
     Source,
     VerificationResult,
     aggregate_frontend_sources,
     render_evidence_markdown,
+    to_frontend_activity,
     to_frontend_sources,
     to_judge_evidence_items,
 )
@@ -390,6 +393,88 @@ def test_nli_source_only_accepts_known_values() -> None:
             source=Source(name="BLS"),
             nli_source="hacker",  # not in the literal
         )
+
+
+# ---------------------------------------------------------------------------
+# Activity log → frontend adapter
+# ---------------------------------------------------------------------------
+
+
+def test_to_frontend_activity_omits_internal_fields() -> None:
+    """``FrontendActivity`` is the slim shape the chrome extension renders.
+    Internal fields (``prompt_hash``, ``timestamp``) stay backend-side."""
+    log = AgentActivityLog(
+        agent="EconomyAgent",
+        claim_text="x",
+        allowed_sources=["BLS"],
+        queried_sources=["BLS"],
+        denied_sources=["NYTimes"],
+        cache_hit=False,
+        duration_ms=1180,
+        model_used="google/gemini-2.5-flash",
+        prompt_hash="a3c8f1...",
+    )
+    result = VerificationResult(
+        agent="EconomyAgent",
+        claim_text="x",
+        allowed_sources=["BLS"],
+        activity_log=log,
+    )
+    fa = to_frontend_activity(result)
+    assert fa is not None
+    fields = set(fa.model_dump().keys())
+    # User-facing audit fields are present:
+    assert {
+        "agent", "allowed_sources", "queried_sources", "denied_sources",
+        "cache_hit", "model_used", "duration_ms", "error",
+    } <= fields
+    # Internal fields are NOT serialized to the frontend:
+    assert "prompt_hash" not in fields
+    assert "timestamp" not in fields
+    assert "claim_text" not in fields
+
+
+def test_to_frontend_activity_returns_none_when_no_log() -> None:
+    result = VerificationResult(
+        agent="EconomyAgent",
+        claim_text="x",
+        allowed_sources=["BLS"],
+        # no activity_log
+    )
+    assert to_frontend_activity(result) is None
+
+
+def test_frontend_claim_activity_defaults_to_empty_list() -> None:
+    """Adding the ``activity`` field must not break callers that don't
+    populate it. Default is empty list, not None."""
+    fc = FrontendClaim(id="claim-1", text="x", verdict="True", explanation="y")
+    assert fc.activity == []
+    # JSON serialization includes the new field with the empty default:
+    payload = fc.model_dump()
+    assert payload["activity"] == []
+
+
+def test_frontend_claim_activity_round_trips() -> None:
+    activity = [
+        FrontendActivity(
+            agent="EconomyAgent",
+            allowed_sources=["BLS", "FRED"],
+            queried_sources=["BLS"],
+            denied_sources=["Random Blog"],
+            cache_hit=False,
+            model_used="google/gemini-2.5-flash",
+            duration_ms=1240,
+        ),
+    ]
+    fc = FrontendClaim(
+        id="claim-1",
+        text="x",
+        verdict="True",
+        explanation="y",
+        activity=activity,
+    )
+    rebuilt = FrontendClaim.model_validate_json(fc.model_dump_json())
+    assert rebuilt == fc
 
 
 def test_agent_source_has_no_trust_or_bias_fields() -> None:

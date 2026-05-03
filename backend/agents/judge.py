@@ -283,3 +283,114 @@ async def calculate_confidence(claim: str, evidence_items: List[Dict[str, str]],
         "warning": warning,
         "details": details
     }
+
+
+# ---------------------------------------------------------------------------
+# Structured-input variant — consumes ``EvidenceItem`` directly from the
+# AllowlistedAgent contract. Eliminates the ``extract_evidence_items`` LLM
+# call, and skips NLI on items where ``nli_source == "agent"`` (the agent
+# already pre-filled probabilities from a verdict-bearing source).
+# ---------------------------------------------------------------------------
+
+
+async def calculate_confidence_structured(
+    claim: str,
+    evidence_items,  # list[backend.contracts.EvidenceItem]
+    bias_lambda: float = 0.2,
+    source_bonus_alpha: float = 0.1,
+):
+    """Same math as ``calculate_confidence``, but consumes structured
+    ``EvidenceItem`` objects from the agent contract.
+
+    LLM-call savings vs. the legacy path:
+
+      * No ``extract_evidence_items`` call (saves 1 per agent result).
+      * NLI skipped when ``item.nli_source == "agent"`` (typical for
+        Tier-A universal-fact-checker hits where the verdict text IS
+        the entailment signal).
+
+    Returns the same dict shape as ``calculate_confidence`` so callers
+    can swap implementations without changing downstream code.
+    """
+    import math
+
+    if not evidence_items:
+        return {
+            "final_score": 0.0,
+            "verdict": "Unverified",
+            "wes": 0.0,
+            "average_bias": 0.0,
+            "bias_penalty": 0.0,
+            "warning": "",
+            "details": [],
+            "reasoning": "No evidence provided.",
+        }
+
+    total_weighted_evidence = 0.0
+    total_trust = 0.0
+    total_bias = 0.0
+    n_sources = len(evidence_items)
+    details = []
+
+    for item in evidence_items:
+        source_name = item.source.name if item.source else "Unknown"
+        text = item.text
+
+        trust, bias = match_source_metrics(source_name)
+
+        # Skip the NLI LLM call when the agent already populated
+        # probabilities (Tier-A universal-fact-checker hit).
+        if item.nli_source == "agent" and item.p_entail is not None and item.p_contradict is not None:
+            p_entail = float(item.p_entail)
+            p_contradict = float(item.p_contradict)
+            nli_origin = "agent"
+        else:
+            nli = await get_nli_probabilities(claim, text)
+            p_entail = nli.p_entail
+            p_contradict = nli.p_contradict
+            nli_origin = "judge"
+
+        e_i = p_entail - p_contradict
+        total_weighted_evidence += e_i * trust
+        total_trust += trust
+        total_bias += bias
+
+        details.append({
+            "source": source_name,
+            "trust": trust,
+            "bias": bias,
+            "p_entail": p_entail,
+            "p_contradict": p_contradict,
+            "evidence_score": e_i,
+            "nli_origin": nli_origin,
+        })
+
+    wes = total_weighted_evidence / total_trust if total_trust > 0 else 0.0
+    avg_bias = total_bias / n_sources
+    bias_penalty = bias_lambda * abs(avg_bias)
+    source_bonus = (
+        1 + (source_bonus_alpha * math.log(n_sources)) if n_sources > 0 else 1.0
+    )
+
+    final_score = wes * (1 - bias_penalty) * source_bonus
+    final_score = max(-1.0, min(1.0, final_score))
+
+    verdict = "Unverified / Needs Context"
+    if final_score > 0.6:
+        verdict = "True"
+    elif final_score < -0.6:
+        verdict = "False"
+
+    warning = ""
+    if bias_penalty > 0.15:
+        warning = "Warning: High source bias detected. Corroboration needed across more diverse sources."
+
+    return {
+        "final_score": round(final_score, 3),
+        "verdict": verdict,
+        "wes": round(wes, 3),
+        "average_bias": round(avg_bias, 3),
+        "bias_penalty": round(bias_penalty, 3),
+        "warning": warning,
+        "details": details,
+    }

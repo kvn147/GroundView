@@ -254,12 +254,29 @@ class FrontendSource(BaseModel):
     url: str = ""
 
 
+class FrontendActivity(BaseModel):
+    """Per-agent audit row rendered in the chrome extension's activity
+    panel. Slimmer than the full ``AgentActivityLog`` — only the
+    user-facing fields are surfaced. Internal fields (``prompt_hash``,
+    ``timestamp``) stay backend-side."""
+
+    agent: str
+    allowed_sources: list[str]
+    queried_sources: list[str] = Field(default_factory=list)
+    denied_sources: list[str] = Field(default_factory=list)
+    cache_hit: bool = False
+    model_used: str = ""
+    duration_ms: int = 0
+    error: Optional[str] = None
+
+
 class FrontendClaim(BaseModel):
     id: str
     text: str
     verdict: str
     explanation: str
     sources: list[FrontendSource] = Field(default_factory=list)
+    activity: list[FrontendActivity] = Field(default_factory=list)
 
 
 class FrontendAggregatedSource(FrontendSource):
@@ -307,6 +324,26 @@ def to_judge_evidence_items(result: VerificationResult) -> list[dict]:
         {"source": item.source.name, "text": item.text}
         for item in result.evidence_items
     ]
+
+
+def to_frontend_activity(result: VerificationResult) -> Optional[FrontendActivity]:
+    """Convert an agent's ``AgentActivityLog`` to the slimmer
+    ``FrontendActivity`` row the activity panel renders. Returns
+    ``None`` if the result has no activity log (unusual — every
+    agent invocation should produce one)."""
+    log = result.activity_log
+    if log is None:
+        return None
+    return FrontendActivity(
+        agent=log.agent,
+        allowed_sources=log.allowed_sources,
+        queried_sources=log.queried_sources,
+        denied_sources=log.denied_sources,
+        cache_hit=log.cache_hit,
+        model_used=log.model_used,
+        duration_ms=log.duration_ms,
+        error=log.error,
+    )
 
 
 def to_frontend_sources(result: VerificationResult) -> list[FrontendSource]:
