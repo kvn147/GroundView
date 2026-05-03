@@ -1,0 +1,79 @@
+# Constraint: targeted negative class — claims about foreign policy, environment, judicial, election integrity, technology, gun rights as constitutional matter, social/cultural issues. Out of scope for all 5 topics.
+claim_text,immigration,healthcare,crime,economy,education
+"The administration imposed new sanctions on three officials of a Central Asian regime over election interference allegations.",0,0,0,0,0
+"Senator Aldermann voted against ratification of an arms control treaty with two Eastern European nations.",0,0,0,0,0
+"The Supreme Court declined to hear a challenge to a state constitutional amendment expanding gubernatorial pardon powers.",0,0,0,0,0
+"Federal judicial vacancies stood at 87 across district and circuit courts at the end of the most recent session.",0,0,0,0,0
+"Representative Tashkentbayev introduced legislation establishing federal data privacy protections for online services serving children.",0,0,0,0,0
+"The Department of Defense announced a $14 billion contract for next-generation aerial refueling tankers.",0,0,0,0,0
+"Governor Sundberg-Olusanya signed an executive order requiring state agencies to disclose AI use in administrative decision-making.",0,0,0,0,0
+"AG Petrova issued an advisory opinion declaring social media age verification laws unenforceable in three Southern states.",0,0,0,0,0
+"Senator Brunner co-sponsored a constitutional amendment that would establish congressional term limits at twelve years total.",0,0,0,0,0
+"The Federal Communications Commission proposed new rules governing political advertisement disclosures for broadcast television.",0,0,0,0,0
+"Mayor Akinwumi announced that the city would adopt a comprehensive ban on single-use plastics at retail establishments.",0,0,0,0,0
+"Representative Halversohn voted against legislation expanding offshore drilling leases in the Gulf of Mexico.",0,0,0,0,0
+"State election officials in twelve jurisdictions adopted new procedures for processing absentee ballots received after election day.",0,0,0,0,0
+"The Environmental Protection Agency finalized stricter emissions standards for heavy-duty diesel trucks operating in port cities.",0,0,0,0,0
+"Senator Eberhardt voted to advance legislation requiring federal contractors to disclose carbon emissions from supply chain activities.",0,0,0,0,0
+"AG Petrosyan filed amicus briefs in three federal cases challenging restrictions on transgender military service members.",0,0,0,0,0
+"The U.S. Coast Guard intercepted 84 vessels carrying narcotics off the Gulf Coast during the previous fiscal year.",0,0,0,0,0
+"Governor Holcomb announced a state initiative to plant 12 million trees over the next decade across public lands.",0,0,0,0,0
+"Federal courts in three districts continued grappling with challenges to state laws governing book selection in school libraries.",0,0,0,0,0
+"Representative Demirjian co-sponsored legislation establishing a federal commission on artificial intelligence governance.",0,0,0,0,0
+"State legislatures in nineteen jurisdictions debated new regulations governing the use of facial recognition by law enforcement.",0,0,0,0,0
+"The State Department announced new visa restrictions targeting officials of an authoritarian regime in Eastern Europe.",0,0,0,0,0
+"Senator Vasilenko voted against advancing a constitutional amendment that would have required balanced federal budgets.",0,0,0,0,0
+"AG Whitehorse announced a multi-state investigation into deceptive advertising practices by major social media platforms.",0,0,0,0,0
+"The Department of Energy awarded $1.2 billion in grants for advanced battery research at three national laboratories.",0,0,0,0,0
+"Mayor Castelvetrano announced that the city would divest from fossil fuel investments in its municipal pension fund.",0,0,0,0,0
+"Federal regulators issued new guidance on greenhouse gas reporting requirements for publicly traded companies.",0,0,0,0,0
+"Representative Bouchard voted to extend the federal moratorium on commercial space launches from coastal regions during nesting seasons.",0,0,0,0,0
+"Senator Ojuoluwa introduced legislation requiring federal agencies to develop comprehensive plans for cybersecurity workforce expansion.",0,0,0,0,0
+"The Federal Election Commission deadlocked on a complaint involving foreign donations channeled through limited liability corporations.",0,0,0,0,0
+"Governor Rasmussen vetoed legislation that would have eliminated the state's renewable portfolio standard for electric utilities.",0,0,0,0,0
+"AG Voinovich filed amicus briefs supporting a federal challenge to state laws restricting drag performances in public spaces.",0,0,0,0,0
+"State courts continued reviewing challenges to redistricting maps adopted by independent commissions in three states.",0,0,0,0,0
+"The Department of the Interior announced new restrictions on grazing permits in three federally managed wilderness areas.",0,0,0,0,0
+"Senator Saxena voted to advance legislation requiring social media platforms to disclose algorithmic content moderation decisions.",0,0,0,0,0
+"Representative Adesuyi co-sponsored a bill expanding federal grants for archaeological preservation on tribal lands.",0,0,0,0,0
+"Federal court rulings continued shaping the boundaries of qualified immunity protections for state and local officials.",0,0,0,0,0
+"The Federal Trade Commission proposed new rules governing data broker disclosure of consumer information practices.",0,0,0,0,0
+"Mayor Talavera announced that the city would phase out gas-powered leaf blowers at municipal facilities by next year.",0,0,0,0,0
+"State campaign finance limits varied significantly across forty-one separate jurisdictions during the most recent election cycle.",0,0,0,0,0
+"AG Mortensen issued an advisory opinion concluding that state public records laws applied to text messages on official devices.",0,0,0,0,0
+"Senator Achterberg voted against a constitutional amendment that would have eliminated the electoral college system.",0,0,0,0,0
+"The U.S. Geological Survey reported continued declines in groundwater levels across major Southwestern aquifers.",0,0,0,0,0
+"Representative Cathcart introduced legislation requiring federal agencies to develop comprehensive plans for quantum computing workforce development.",0,0,0,0,0
+"Governor Tikhomirov signed an executive order banning state contracts with companies operating in adversarial nations.",0,0,0,0,0
+"State legislatures in fourteen jurisdictions adopted new restrictions on the use of independent expenditures by political action committees.",0,0,0,0,0
+"The National Park Service reported 312 million visits to federally managed parks during the most recent calendar year.",0,0,0,0,0
+"Senator Korhonen co-sponsored a bill expanding federal protections for whistleblowers reporting violations of antitrust laws.",0,0,0,0,0
+"AG Brennan filed civil charges against three energy companies for misrepresenting climate risks in regulatory disclosures.",0,0,0,0,0
+"The Supreme Court issued a ruling limiting the EPA's authority to regulate emissions from existing power plants.",0,0,0,0,0
+"Mayor Stojanovic announced a citywide expansion of urban tree canopy targeting historically underserved neighborhoods.",0,0,0,0,0
+"Federal judges in three districts continued reviewing challenges to state laws governing voter identification requirements.",0,0,0,0,0
+"Senator Petersen voted against legislation that would have expanded federal oversight of cryptocurrency exchanges.",0,0,0,0,0
+"Representative Yelchin introduced a bill establishing federal cybersecurity standards for critical infrastructure operators.",0,0,0,0,0
+"Governor Magnusson signed legislation prohibiting state contracts with companies that fail to disclose AI use in hiring decisions.",0,0,0,0,0
+"AG Sigursdottir filed federal complaints alleging that three major airlines had engaged in coordinated capacity restrictions.",0,0,0,0,0
+"The Federal Aviation Administration announced new restrictions on commercial drone operations near major airports.",0,0,0,0,0
+"State legislatures in eight jurisdictions debated new regulations governing the use of generative AI in classroom settings.",0,0,0,0,0
+"Senator Sokolova voted to advance a constitutional amendment that would impose term limits on Supreme Court justices.",0,0,0,0,0
+"Mayor Quintanilla announced that the city would expand its citywide composting program to 38,000 additional households.",0,0,0,0,0
+"Representative Mwangi co-sponsored legislation establishing a federal grant program for rural broadband infrastructure expansion.",0,0,0,0,0
+"AG Kobayashi announced settlements with three pesticide manufacturers over alleged violations of environmental disclosure laws.",0,0,0,0,0
+"The Department of State announced new visa policies affecting officials of two Asian regimes accused of human rights violations.",0,0,0,0,0
+"Senator Hassanali voted against a constitutional amendment that would have required congressional approval for major regulatory actions.",0,0,0,0,0
+"Federal regulators issued guidance addressing potential anticompetitive concerns in major tech industry mergers and acquisitions.",0,0,0,0,0
+"Governor Persaud signed an executive order establishing a state task force on artificial intelligence governance and accountability.",0,0,0,0,0
+"AG Demirjian filed federal challenges to three state laws restricting the use of certain social media features by minors.",0,0,0,0,0
+"State election officials in twenty-two jurisdictions adopted new procedures for verifying signatures on mail-in ballot envelopes.",0,0,0,0,0
+"Representative Pemberton voted to extend the federal moratorium on offshore drilling lease sales in Atlantic federal waters.",0,0,0,0,0
+"The Department of Commerce announced new export controls targeting advanced semiconductor manufacturing equipment.",0,0,0,0,0
+"Senator Wisniewski introduced legislation requiring federal agencies to disclose climate-related risks in their long-term planning.",0,0,0,0,0
+"Mayor Sundgren announced a citywide initiative to expand bike lane infrastructure across forty-eight miles of urban roads.",0,0,0,0,0
+"AG Petrenko issued an advisory opinion concluding that state right-to-record laws applied to encounters with public officials.",0,0,0,0,0
+"Federal court rulings continued reshaping the legal landscape governing First Amendment protections for online speech platforms.",0,0,0,0,0
+"State legislatures in seven jurisdictions debated new restrictions on the use of facial recognition technology in public schools.",0,0,0,0,0
+"Senator Ferraro voted against legislation expanding federal oversight of nuclear waste storage at decommissioned reactor sites.",0,0,0,0,0
+"The Federal Reserve published research analyzing the effects of stablecoin adoption on traditional banking sector deposits.",0,0,0,0,0

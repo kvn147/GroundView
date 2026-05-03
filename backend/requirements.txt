@@ -1,2 +1,7 @@
 google-genai
 python-dotenv
+scikit-learn
+joblib
+numpy
+pandas
+pytest

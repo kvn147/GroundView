@@ -1,0 +1,78 @@
+# Constraint: G (short-form — every claim 8–14 words, punchy, no subordinate clauses)
+claim_text,immigration,healthcare,crime,economy,education
+"The administration deported 142,000 individuals during the most recent fiscal year.",1,0,0,0,0
+"Asylum applications doubled in the southwestern district last quarter.",1,0,0,0,0
+"USCIS reduced naturalization processing times by 31 percent over twelve months.",1,0,0,0,0
+"Border apprehensions hit a five-year low last month.",1,0,0,0,0
+"DACA renewals processed in 2023 totaled 423,000 applications.",1,0,0,0,0
+"ICE detention populations averaged 32,400 individuals daily this past summer.",1,0,0,0,0
+"The visa bulletin advanced by eight months for skilled workers.",1,0,0,0,0
+"Refugee admissions reached 60,000 during the previous fiscal year.",1,0,0,0,0
+"Customs seized 1,800 kilograms of fentanyl at northern border crossings.",1,0,1,0,0
+"Sanctuary jurisdictions now cover 38 percent of the U.S. population.",1,0,0,0,0
+"Premiums on marketplace plans rose 7 percent for the upcoming year.",0,1,0,0,0
+"Medicare drug price negotiations covered ten medications in the first round.",0,1,0,0,0
+"Hospital closures hit a record 47 facilities this past year.",0,1,0,0,0
+"The uninsured rate fell to 7.7 percent nationwide last year.",0,1,0,0,0
+"Insulin copays dropped to $35 monthly for Medicare beneficiaries.",0,1,0,0,0
+"Mental health emergency room visits rose 14 percent year over year.",0,1,0,0,0
+"Maternal mortality climbed to 32 deaths per 100,000 live births.",0,1,0,0,0
+"FDA approved 55 novel drugs during the previous calendar year.",0,1,0,0,0
+"Telehealth claims accounted for 8 percent of all primary care visits.",0,1,0,0,0
+"Medicaid enrollment exceeded 92 million during the redetermination period.",0,1,0,0,0
+"Violent crime declined 8 percent in major cities last year.",0,0,1,0,0
+"Federal indictments for fentanyl trafficking rose 41 percent in 2023.",0,0,1,0,0
+"Police staffing fell 9 percent below authorized levels nationwide.",0,0,1,0,0
+"Hate crime reports increased 19 percent year over year.",0,0,1,0,0
+"Homicide clearance rates averaged 52 percent across major cities.",0,0,1,0,0
+"Federal prison populations dropped to 158,000 individuals last year.",0,0,1,0,0
+"Recidivism rates fell to 38 percent within three years of release.",0,0,1,0,0
+"Mass incarceration costs taxpayers $80 billion annually nationwide.",0,0,1,0,0
+"Pretrial detention populations declined 14 percent in reform jurisdictions.",0,0,1,0,0
+"Carjackings dropped 22 percent in the ten largest cities.",0,0,1,0,0
+"Inflation cooled to 3.1 percent over the trailing twelve months.",0,0,0,1,0
+"Unemployment held steady at 3.7 percent during the most recent month.",0,0,0,1,0
+"GDP grew at an annualized rate of 4.9 percent last quarter.",0,0,0,1,0
+"Manufacturing payrolls added 14,000 jobs during the third quarter.",0,0,0,1,0
+"The federal deficit reached $1.7 trillion this fiscal year.",0,0,0,1,0
+"Median wages rose 4.6 percent year over year for full-time workers.",0,0,0,1,0
+"Labor force participation climbed to 62.8 percent last month.",0,0,0,1,0
+"Mortgage rates averaged 7.2 percent during the previous quarter.",0,0,0,1,0
+"Small business formation reached 5.5 million applications last year.",0,0,0,1,0
+"Federal Reserve held rates at 5.5 percent for the third consecutive meeting.",0,0,0,1,0
+"K-12 enrollment fell 1.4 percent over the previous two years.",0,0,0,0,1
+"Student loan balances exceeded $1.7 trillion nationwide last year.",0,0,0,1,1
+"Reading proficiency among fourth-graders dropped to 31 percent on NAEP.",0,0,0,0,1
+"Pell grant recipients exceeded 6.3 million students nationwide.",0,0,0,1,1
+"Teacher vacancies hit 55,000 unfilled positions at the start of the year.",0,0,0,0,1
+"FAFSA completion rates fell to 49 percent among high school seniors.",0,0,0,0,1
+"Average student debt for graduates reached $37,800 last year.",0,0,0,1,1
+"Charter school enrollment exceeded 3.7 million students nationwide.",0,0,0,0,1
+"Universal pre-K programs operated in 14 states last academic year.",0,0,0,0,1
+"Community college enrollment rose 2.1 percent during the most recent term.",0,0,0,0,1
+"Title I funding totaled $18.4 billion during the most recent fiscal year.",0,0,0,0,1
+"Border state hospitals saw 280,000 uninsured emergency visits last year.",1,1,0,0,0
+"Immigrant labor accounted for 18 percent of the construction workforce.",1,0,0,1,0
+"Refugee resettlement programs created 2,400 healthcare jobs nationwide.",1,1,0,1,0
+"Drug overdoses among incarcerated individuals rose 41 percent over two years.",0,1,1,0,0
+"Mental health calls now make up 22 percent of police dispatches.",0,1,1,0,0
+"Hospital workforce shortages drove a 14 percent rise in wages.",0,1,0,1,0
+"School-based health clinics served 6.2 million students last year.",0,1,0,0,1
+"Student loan defaults among low-income borrowers fell 11 percent.",0,0,0,1,1
+"Job training programs enrolled 1.4 million workers during the year.",0,0,0,1,1
+"School police funding rose 8 percent in three large districts.",0,0,1,0,1
+"Foreign policy approval ratings dropped 12 points over six months.",0,0,0,0,0
+"Carbon emissions fell 3 percent nationwide during the last reporting year.",0,0,0,0,0
+"Voter registration grew by 2.4 million people last cycle.",0,0,0,0,0
+"Federal judicial vacancies stood at 89 across district and circuit courts.",0,0,0,0,0
+"Solar capacity additions reached 32 gigawatts during the previous year.",0,0,0,0,0
+"Federal court filings dropped 4 percent during the previous fiscal year.",0,0,0,0,0
+"The Supreme Court issued opinions in 58 cases this past term.",0,0,0,0,0
+"State campaign finance limits varied across 41 separate jurisdictions.",0,0,0,0,0
+"Environmental impact reviews now average 38 months for major projects.",0,0,0,0,0
+"Defense spending consumed 14 percent of the federal budget last year.",0,0,0,0,0
+"International trade deficits widened to $948 billion last year.",0,0,0,1,0
+"Press freedom rankings placed the country 45th globally in 2023.",0,0,0,0,0
+"Renewable energy capacity additions exceeded fossil fuel additions threefold.",0,0,0,0,0
+"State election laws changed in 27 jurisdictions over the past year.",0,0,0,0,0
+"Federal land management policies covered 640 million acres nationwide.",0,0,0,0,0
