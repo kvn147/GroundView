@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -41,7 +42,11 @@ from backend.contracts import (
     FrontendSource,
 )
 from backend.core.extract import extract_claims
-from backend.core.transcript import get_transcript, normalize_transcript
+from backend.core.transcript import (
+    chunk_transcript_segments,
+    get_transcript,
+    normalize_transcript_segments,
+)
 
 api_router = APIRouter()
 logger = logging.getLogger("uvicorn.error")
@@ -150,13 +155,15 @@ async def _emit(
 
 
 def _store_transcript(url: str, transcript: Any) -> dict:
-    chunks = normalize_transcript(transcript)
+    segments = normalize_transcript_segments(transcript)
+    chunks = chunk_transcript_segments(segments)
     transcript_id = f"tr-{uuid4().hex}"
     total_characters = sum(len(chunk["text"]) for chunk in chunks)
     preview = chunks[0]["text"][:160] if chunks else ""
     record = {
         "transcriptId": transcript_id,
         "url": url,
+        "segments": segments,
         "chunks": chunks,
         "chunkCount": len(chunks),
         "totalCharacters": total_characters,
@@ -175,7 +182,7 @@ def _store_transcript(url: str, transcript: Any) -> dict:
     return record
 
 
-def _get_stored_transcript(transcript_id: str) -> list[dict]:
+def _get_stored_transcript(transcript_id: str) -> dict:
     record = _transcript_store.get(transcript_id)
     if record is None:
         _transcript_debug("lookup miss id=%s", transcript_id)
@@ -187,22 +194,97 @@ def _get_stored_transcript(transcript_id: str) -> list[dict]:
         record["totalCharacters"],
         record.get("preview", ""),
     )
-    return record["chunks"]
+    return record
+
+
+def _build_transcript_record(url: str, transcript: Any) -> dict:
+    segments = normalize_transcript_segments(transcript)
+    chunks = chunk_transcript_segments(segments)
+    return {
+        "url": url,
+        "segments": segments,
+        "chunks": chunks,
+    }
 
 
 async def _resolve_transcript_chunks(
     url: str,
     transcript: Any | None = None,
     transcript_id: str | None = None,
-) -> list[dict]:
+) -> dict:
     if transcript_id:
         _transcript_debug("resolving from transcriptId=%s url=%s", transcript_id, url)
         return _get_stored_transcript(transcript_id)
+    if transcript is not None:
+        _transcript_debug("resolving from inline request body url=%s", url)
+        return _build_transcript_record(url, transcript)
     if transcript is None:
         _transcript_debug("no transcript supplied for url=%s", url)
-        return await get_transcript(url)
-    _transcript_debug("resolving from inline request body url=%s", url)
-    return await get_transcript(url, transcript)
+        chunks = await get_transcript(url)
+        return {"url": url, "segments": chunks, "chunks": chunks}
+    return {"url": url, "segments": [], "chunks": []}
+
+
+def _canonicalize_text(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", text.lower()))
+
+
+def _claim_time_bounds(
+    claim_info: dict,
+    chunk_timestamp: float,
+    transcript_segments: list[dict],
+) -> tuple[float, float]:
+    fallback = float(claim_info.get("timestamp", chunk_timestamp))
+    raw_quote = str(claim_info.get("raw_quote", "")).strip()
+    if not raw_quote or not transcript_segments:
+        return fallback, fallback
+
+    quote_canon = _canonicalize_text(raw_quote)
+    if not quote_canon:
+        return fallback, fallback
+
+    chunk_floor = chunk_timestamp
+    chunk_ceiling = chunk_timestamp + 70.0
+    candidate_segments = [
+        seg for seg in transcript_segments
+        if chunk_floor - 10.0 <= float(seg["timestamp"]) <= chunk_ceiling
+    ] or transcript_segments
+
+    best_match: tuple[float, float] | None = None
+    best_score = -1.0
+    max_window = min(8, len(candidate_segments))
+
+    for start_idx in range(len(candidate_segments)):
+        combined_parts: list[str] = []
+        for end_idx in range(start_idx, min(len(candidate_segments), start_idx + max_window)):
+            combined_parts.append(candidate_segments[end_idx]["text"])
+            combined_canon = _canonicalize_text(" ".join(combined_parts))
+            if not combined_canon:
+                continue
+
+            score = 0.0
+            if quote_canon == combined_canon:
+                score = len(quote_canon) + 1000.0
+            elif quote_canon in combined_canon:
+                score = len(quote_canon)
+            elif combined_canon in quote_canon:
+                score = len(combined_canon) * 0.95
+            else:
+                quote_tokens = set(quote_canon.split())
+                combined_tokens = set(combined_canon.split())
+                overlap = len(quote_tokens & combined_tokens)
+                if overlap:
+                    score = overlap / max(1, len(quote_tokens))
+            if score > best_score:
+                best_score = score
+                best_match = (
+                    float(candidate_segments[start_idx]["timestamp"]),
+                    float(candidate_segments[end_idx]["timestamp"]),
+                )
+
+    if best_match is None or best_score <= 0:
+        return fallback, fallback
+    return best_match
 
 
 @api_router.post("/check-political")
@@ -265,8 +347,14 @@ def _confidence_state_from_score(final_score: float) -> ConfidenceState:
 async def _annotation_for_claim(
     claim_info: dict,
     chunk_timestamp: float,
+    transcript_segments: list[dict],
 ) -> tuple[Annotation, dict, object, list]:
     claim_text = claim_info["claim"]
+    claim_start_time, claim_end_time = _claim_time_bounds(
+        claim_info,
+        chunk_timestamp,
+        transcript_segments,
+    )
     decision = l2b_route(claim_text)
 
     fanout = await _orchestrator.run(
@@ -284,8 +372,8 @@ async def _annotation_for_claim(
         claim=Claim(
             claim_text=claim_text,
             raw_quote=claim_info.get("raw_quote", claim_text),
-            start_time=claim_info.get("timestamp", chunk_timestamp),
-            end_time=claim_info.get("timestamp", chunk_timestamp),
+            start_time=claim_start_time,
+            end_time=claim_end_time,
             topics=decision.routed_topics,
         ),
         results=fanout.results,
@@ -362,7 +450,11 @@ async def analyze_video_events(
     )
 
     try:
-        chunks = await _resolve_transcript_chunks(url, transcript, transcript_id)
+        transcript_record = await _resolve_transcript_chunks(
+            url,
+            transcript,
+            transcript_id,
+        )
     except Exception as exc:
         event, seq = await _emit(
             "error",
@@ -382,6 +474,8 @@ async def analyze_video_events(
         )
         yield event
         return
+    chunks = transcript_record["chunks"]
+    transcript_segments = transcript_record["segments"]
     _transcript_debug(
         "analyze-video ready run_id=%s chunks=%s chars=%s firstTimestamp=%s preview=%r",
         run_id,
@@ -410,6 +504,11 @@ async def analyze_video_events(
         for claim_info in extracted:
             if request is not None and await request.is_disconnected():
                 break
+            claim_start_time, claim_end_time = _claim_time_bounds(
+                claim_info,
+                chunk["timestamp"],
+                transcript_segments,
+            )
 
             event, seq = await _emit(
                 "claim_extracted",
@@ -419,8 +518,8 @@ async def analyze_video_events(
                 claim={
                     "claim_text": claim_info["claim"],
                     "raw_quote": claim_info.get("raw_quote", claim_info["claim"]),
-                    "start_time": claim_info.get("timestamp", chunk["timestamp"]),
-                    "end_time": claim_info.get("timestamp", chunk["timestamp"]),
+                    "start_time": claim_start_time,
+                    "end_time": claim_end_time,
                     "topics": [],
                 },
             )
@@ -428,7 +527,9 @@ async def analyze_video_events(
 
             try:
                 annotation, _judge_result, decision, results = await _annotation_for_claim(
-                    claim_info, chunk["timestamp"]
+                    claim_info,
+                    chunk["timestamp"],
+                    transcript_segments,
                 )
             except Exception as exc:
                 event, seq = await _emit(
@@ -517,13 +618,16 @@ async def analyze_clip_events(
 
     if req.captions:
         chunks = [{"text": req.captions, "timestamp": req.startTime}]
+        transcript_segments = chunks
     else:
         try:
-            chunks = await _resolve_transcript_chunks(
+            transcript_record = await _resolve_transcript_chunks(
                 req.url,
                 req.transcript,
                 req.transcriptId,
             )
+            chunks = transcript_record["chunks"]
+            transcript_segments = transcript_record["segments"]
         except Exception as exc:
             event, seq = await _emit(
                 "error",
@@ -566,6 +670,11 @@ async def analyze_clip_events(
         return
 
     claim_info = extracted[0]
+    claim_start_time, claim_end_time = _claim_time_bounds(
+        claim_info,
+        selected["timestamp"],
+        transcript_segments,
+    )
     event, seq = await _emit(
         "claim_extracted",
         run_id,
@@ -574,8 +683,8 @@ async def analyze_clip_events(
         claim={
             "claim_text": claim_info["claim"],
             "raw_quote": claim_info.get("raw_quote", claim_info["claim"]),
-            "start_time": claim_info.get("timestamp", selected["timestamp"]),
-            "end_time": claim_info.get("timestamp", selected["timestamp"]),
+            "start_time": claim_start_time,
+            "end_time": claim_end_time,
             "topics": [],
         },
     )
@@ -583,7 +692,9 @@ async def analyze_clip_events(
 
     try:
         annotation, judge_result, decision, results = await _annotation_for_claim(
-            claim_info, selected["timestamp"]
+            claim_info,
+            selected["timestamp"],
+            transcript_segments,
         )
     except Exception as exc:
         event, seq = await _emit(

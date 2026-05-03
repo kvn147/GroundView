@@ -122,10 +122,14 @@ async def test_analyze_video_events_emit_incremental_contract(mocked_pipeline) -
 
     claim_final = next(event for event in events if event["event"] == "claim_final")
     assert claim_final["payload"]["claim"]["text"] == "Inflation was 3 percent."
+    assert claim_final["payload"]["claim"]["startTime"] == 12.0
+    assert claim_final["payload"]["claim"]["endTime"] == 12.0
     assert claim_final["payload"]["claim"]["verdict"] == "True"
 
     done = events[-1]
     assert done["payload"]["result"]["claims"][0]["text"] == "Inflation was 3 percent."
+    assert done["payload"]["result"]["claims"][0]["startTime"] == 12.0
+    assert done["payload"]["result"]["claims"][0]["endTime"] == 12.0
     assert done["payload"]["result"]["trustworthinessScore"] == 5
 
 
@@ -191,3 +195,48 @@ async def test_analyze_clip_events_emit_done_response(mocked_pipeline) -> None:
     assert result["claim"] == "Inflation was 3 percent."
     assert result["verdict"] == "True"
     assert result["sources"] == [{"name": "BLS", "url": "https://bls.gov"}]
+
+
+@pytest.mark.asyncio
+async def test_analyze_video_claim_timestamps_match_underlying_segments(
+    mocked_pipeline,
+    monkeypatch,
+) -> None:
+    async def fake_extract_claims(text: str, timestamp: float):
+        return [
+            {
+                "claim": "Claim one.",
+                "raw_quote": "Claim one happened first.",
+                "timestamp": timestamp,
+            },
+            {
+                "claim": "Claim two.",
+                "raw_quote": "Claim two happened later.",
+                "timestamp": timestamp,
+            },
+        ]
+
+    monkeypatch.setattr(video, "extract_claims", fake_extract_claims)
+
+    transcript = [
+        {"text": "Claim one happened first.", "timestamp": 5.0},
+        {"text": "Claim two happened later.", "timestamp": 19.0},
+    ]
+    events = [
+        event
+        async for event in video.analyze_video_events(
+            "https://youtu.be/x",
+            transcript=transcript,
+        )
+    ]
+
+    claim_final_events = [
+        event["payload"]["claim"]
+        for event in events
+        if event["event"] == "claim_final"
+    ]
+
+    assert claim_final_events[0]["startTime"] == 5.0
+    assert claim_final_events[0]["endTime"] == 5.0
+    assert claim_final_events[1]["startTime"] == 19.0
+    assert claim_final_events[1]["endTime"] == 19.0

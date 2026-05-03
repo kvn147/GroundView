@@ -273,6 +273,8 @@ class FrontendActivity(BaseModel):
 class FrontendClaim(BaseModel):
     id: str
     text: str
+    startTime: Optional[float] = None
+    endTime: Optional[float] = None
     verdict: str
     explanation: str
     sources: list[FrontendSource] = Field(default_factory=list)

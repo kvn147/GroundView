@@ -49,8 +49,16 @@ def _normalize_segments(transcript: TranscriptInput) -> list[dict]:
     return sorted(normalized, key=lambda item: item["timestamp"])
 
 
+def normalize_transcript_segments(transcript: TranscriptInput) -> list[dict]:
+    return _normalize_segments(transcript)
+
+
+def chunk_transcript_segments(segments: list[dict]) -> list[dict]:
+    return _chunk_segments(segments)
+
+
 def normalize_transcript(transcript: TranscriptInput) -> list[dict]:
-    return _chunk_segments(_normalize_segments(transcript))
+    return chunk_transcript_segments(normalize_transcript_segments(transcript))
 
 
 async def get_transcript(

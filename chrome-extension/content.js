@@ -30,6 +30,13 @@
     return video ? video.currentTime : 0;
   }
 
+  function seekVideoTo(seconds) {
+    const video = document.querySelector("video.html5-main-video");
+    if (video) {
+      video.currentTime = seconds;
+    }
+  }
+
   function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -266,13 +273,22 @@
     data.claims.forEach((claim) => {
       const li = document.createElement("li");
       li.className = "ytfc-claim";
+      const claimStartTime = Number.isFinite(claim.startTime) ? claim.startTime : 0;
+      const claimEndTime = Number.isFinite(claim.endTime) ? claim.endTime : claimStartTime;
+      const hasTimestamp = Number.isFinite(claim.startTime);
+      const detailTimestampMarkup = hasTimestamp
+        ? `<div class="ytfc-claim-detail-meta">Timestamp: <button class="ytfc-claim-detail-timestamp" type="button" data-time="${claimStartTime}" aria-label="Seek video to ${formatTime(claimStartTime)}">${formatTime(claimStartTime)}${claimEndTime > claimStartTime ? ` - ${formatTime(claimEndTime)}` : ""}</button></div>`
+        : "";
 
       li.innerHTML = `
         <div class="ytfc-claim-top">
-          <span class="ytfc-claim-text">${claim.text}</span>
+          <div class="ytfc-claim-main">
+            <span class="ytfc-claim-text">${claim.text}</span>
+          </div>
           <span class="ytfc-verdict ${getVerdictClass(claim.verdict)}">${claim.verdict}</span>
         </div>
         <div class="ytfc-claim-detail">
+          ${detailTimestampMarkup}
           <div class="ytfc-claim-explanation">${claim.explanation}</div>
           <div class="ytfc-claim-sources">
             ${claim.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.name}</a>`).join("")}
@@ -283,6 +299,14 @@
       li.addEventListener("click", () => {
         li.classList.toggle("ytfc-expanded");
       });
+
+      const detailTimestampButton = li.querySelector(".ytfc-claim-detail-timestamp");
+      if (detailTimestampButton) {
+        detailTimestampButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          seekVideoTo(parseFloat(detailTimestampButton.dataset.time));
+        });
+      }
 
       claimsList.appendChild(li);
     });
@@ -496,8 +520,7 @@
       `;
       card.querySelectorAll(".ytfc-clip-ts").forEach((ts) => {
         ts.addEventListener("click", () => {
-          const video = document.querySelector("video.html5-main-video");
-          if (video) video.currentTime = parseFloat(ts.dataset.time);
+          seekVideoTo(parseFloat(ts.dataset.time));
         });
       });
 
